@@ -16,6 +16,6 @@ export async function POST(req: Request): Promise<Response> {
   // same answer for "no such email" and "wrong ID" so emails can't be probed
   if (!e || normId(e.emp_id) !== empId) return json({ ok: false, error: BAD }, 401);
 
-  return json({ ok: true, employee: shape(e as Record<string, string | null>, (await loadRatings(db(), [e.emp_id as string]))[e.emp_id as string]) },
+  return json({ ok: true, serverNow: Date.now(), employee: shape(e as Record<string, string | null>, (await loadRatings(db(), [e.emp_id as string]))[e.emp_id as string]) },
     200, { 'set-cookie': authCookie(e.emp_id) });
 }

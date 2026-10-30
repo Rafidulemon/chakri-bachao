@@ -17,7 +17,7 @@
   <div class="strap"></div><div class="clip"></div>
   <div class="idcard" id="idcard">
    <div class="idhole"></div>
-   <div class="idhead"><div class="co">EMPLOYEE ID CARD · ফ্লোর ১৩</div><h2>চাকরি বাঁচাও</h2><div class="tag">আজকের দিনটা টিকে থাকুন।</div><div class="stamp">SHOW CAUSE</div></div>
+   <div class="idhead"><div class="co">কর্মচারী পরিচয়পত্র · ফ্লোর ১৩</div><h2>চাকরি বাঁচাও</h2><div class="tag">আজকের দিনটা টিকে থাকুন।</div><div class="stamp">কারণ দর্শাও</div></div>
    <div class="idbody">
     <div class="photo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="22" r="12"/><path d="M8 64c2-14 12-22 24-22s22 8 24 22z"/></svg><span>ছবি নেই<br>(এইচআর হারিয়ে ফেলেছে)</span></div>
     <div class="meta">আইডি: <b id="empId">EMP-420</b><br>যোগদান: <b>গতকাল থেকে প্রোবেশনে</b><br>বেতন: <b>আগামী সপ্তাহে</b><br>এখন সময়: <span class="clock" id="lclock">০৯:১৪</span></div>
@@ -72,6 +72,7 @@
   <div class="toggles">
     <button class="tg" id="tgWalls" aria-pressed="false">পুরো উঁচু দেয়াল ও ছাদ</button>
     <button class="tg" id="tgLabels" aria-pressed="true">লেবেল</button>
+    <button class="tg" id="tgEn" aria-pressed="false">English সাবটাইটেল</button>
   </div>
   <details id="dZones" open>
     <summary>কে কোথায় কী করছে</summary>
@@ -140,6 +141,17 @@
   <div class="prow"><button type="button" class="pghost" id="invNo">না, থাক</button><button type="button" class="pgo" id="invYes">⚔️ চ্যালেঞ্জ নিলাম</button></div>
  </div>
 </div>
+<div class="pmodal" id="mletter" hidden>
+ <div class="pcard letter" role="alertdialog" aria-modal="true" aria-labelledby="lTitle">
+  <div class="lstamp">ধরা!</div>
+  <h2 id="lTitle"></h2>
+  <div class="lbody" id="lBody"></div>
+  <div class="lsign" id="lSign"></div>
+  <div class="lcut" id="lCut"></div>
+  <div class="prow"><button type="button" class="pgo" id="lOk">ক্ষমা চাইলাম 🙏</button></div>
+ </div>
+</div>
+<div class="chase" id="chase" hidden><b>🏃 দৌড় দাও! বস ধরতে আসছে!</b><span id="chaseD"></span></div>
 <div class="pmodal" id="mres" hidden>
  <div class="pcard mres" role="dialog" aria-modal="true">
   <div class="rbig" id="rBig">🏆</div>

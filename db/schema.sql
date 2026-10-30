@@ -102,3 +102,13 @@ create table if not exists live_matches (
   created_at timestamptz not null default now()
 );
 create index if not exists live_matches_host_idx on live_matches (host_id, created_at desc);
+
+-- Employment rating: starts at 100, goes down when a boss catches you in the game room
+alter table employees add column if not exists employment integer not null default 100;
+create table if not exists warnings (
+  id         bigserial primary key,
+  emp_id     text not null references employees (emp_id),
+  boss       text not null,
+  delta      integer not null,
+  created_at timestamptz not null default now()
+);

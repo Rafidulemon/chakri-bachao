@@ -59,6 +59,8 @@ function apply(b, [i, j]) {
   return nb;
 }
 const legal = (b, side) => pseudo(b, side).filter(m => !inCheck(apply(b, m), side));
+// only kings, or kings and a single knight/bishop: nobody can ever mate
+const deadPosition = b => { const rest = b.filter(p => p && p.toLowerCase() !== 'k'); return rest.length === 0 || (rest.length === 1 && 'nb'.includes(rest[0].toLowerCase())); };
 const material = (b, side) => b.reduce((s, p) => s + (p && sideOf(p) === side ? VAL[p.toLowerCase()] : 0), 0);
 
 // who: participant index playing white / black. skill: chance each move is the best-looking one (the rest are random).
@@ -67,7 +69,7 @@ export function createChess(whiteIdx = 0, blackIdx = 1, skill = [.55, .55], rng 
   const back = 'rnbqkbnr';
   for (let c = 0; c < 8; c++) { b[c] = back[c]; b[8 + c] = 'p'; b[48 + c] = 'P'; b[56 + c] = back[c].toUpperCase(); }
   for (let i = 16; i < 48; i++) b[i] = '';
-  const g = { b, turn: 0, plies: 0, done: false, who: [whiteIdx, blackIdx], winner: -1, draw: false, last: null };
+  const g = { b, turn: 0, plies: 0, done: false, who: [whiteIdx, blackIdx], winner: -1, draw: false, last: null, half: 0, seen: {}, maxPlies: 700 };
   g.step = () => {
     if (g.done) return null;
     const side = g.turn, mv = legal(g.b, side), name = ['সাদা', 'কালো'];
@@ -79,13 +81,26 @@ export function createChess(whiteIdx = 0, blackIdx = 1, skill = [.55, .55], rng 
     let mvPick;
     if (rng() < skill[side]) {
       let best = -1e9;
+      const mine = material(g.b, side), ahead = mine - material(g.b, 1 - side), total = mine + material(g.b, 1 - side);
       for (const m of mv) {
         const q = g.b[m[1]], nb = apply(g.b, m);
         let s = q ? VAL[q.toLowerCase()] * 2 : 0;
         if (nb[m[1]] !== g.b[m[0]]) s += 8;
-        if (inCheck(nb, 1 - side)) s += 1.2;
+        const chk = inCheck(nb, 1 - side);
+        if (chk) s += 1.2;
+        // see mate in one and take it; don't stalemate when ahead
+        if (ahead >= 0 || chk) { const replies = legal(nb, 1 - side).length; if (!replies) s += chk ? 1000 : (ahead > 1 ? -60 : 0); }
         // don't walk into an immediate capture of something bigger
         if (pseudo(nb, 1 - side).some(o => o[1] === m[1])) s -= VAL[nb[m[1]].toLowerCase()] * 1.4;
+        // a little sense of direction, so games go somewhere instead of shuffling: push pawns, centralise pieces,
+        // and when well ahead walk the king towards the enemy king to finish the job
+        const t = g.b[m[0]].toLowerCase(), r1 = m[1] >> 3, c1 = m[1] & 7, centre = 3.5 - Math.max(Math.abs(r1 - 3.5), Math.abs(c1 - 3.5));
+        if (t === 'p') s += (side === 0 ? 7 - r1 : r1) * .22;
+        else if (t === 'n' || t === 'b') s += centre * .12;
+        else if (t === 'k' && ahead > 2 && total < 20) { const ek = nb.indexOf(side === 0 ? 'k' : 'K'); s += (14 - (Math.abs((ek >> 3) - r1) + Math.abs((ek & 7) - c1))) * .18; }
+        // stay out of positions that have already happened
+        const seenN = g.seen[nb.join('') + (1 - side)] || 0;
+        if (seenN) s -= seenN * 4;
         s += rng() * 1.6;
         if (s > best) { best = s; mvPick = m; }
       }
@@ -97,10 +112,15 @@ export function createChess(whiteIdx = 0, blackIdx = 1, skill = [.55, .55], rng 
     const check = inCheck(g.b, g.turn);
     g.last = { from: mvPick[0], to: mvPick[1], piece, cap, promo, check, side };
     g.msg = name[side] + ' চাল দিল' + (cap ? ', ঘুঁটি কেটে নিল' : '') + (check ? ' (চেক!)' : '') + '।';
-    if (g.plies >= 160) { // out of patience: whoever has more material wins
-      const w = material(g.b, 0), bl = material(g.b, 1);
-      g.done = true;
-      if (Math.abs(w - bl) >= 1) { const ws = w > bl ? 0 : 1; g.winner = g.who[ws]; g.msg = 'সময় শেষ, বেশি ঘুঁটি থাকায় ' + name[ws] + ' জিতল।'; } else { g.draw = true; g.msg = 'সময় শেষ, ড্র।'; }
+    g.half = piece.toLowerCase() === 'p' || cap ? 0 : g.half + 1;
+    const key = g.b.join('') + g.turn;
+    g.seen[key] = (g.seen[key] || 0) + 1;
+    const drawn = why => { g.done = true; g.draw = true; g.msg = why; };
+    if (g.seen[key] >= 5) drawn('একই অবস্থান বারবার ফিরে এল, ম্যাচ ড্র।');
+    else if (g.half >= 100) drawn('৫০ চালে কিছু ঘটেনি, ম্যাচ ড্র।');
+    else if (deadPosition(g.b)) drawn('মাত করার মতো ঘুঁটি নেই, ম্যাচ ড্র।');
+    else if (g.plies >= g.maxPlies) { // failsafe: whoever has more material wins
+      g.forceEnd(); g.msg = g.draw ? 'অনেক লম্বা খেলা, ড্র।' : 'অনেক লম্বা খেলা, বেশি ঘুঁটি থাকায় জিতল।';
     }
     return g.last;
   };
@@ -165,12 +185,14 @@ export function createLudo(n, rng = Math.random) {
       ev = { pl, roll, moved: true, t: o.t, from, to: o.np, caught, msg: ev.msg + (from < 0 ? ', বের হল' : '') + (caught.length ? ', ঘুঁটি কাটল!' : '') + (o.np === 56 ? ', ঘরে পৌঁছল!' : '') };
       if (caught.length || o.np === 56) extra = true;
       if (tok[pl].every(p => p === 56)) {
-        g.finished.push(pl); g.done = true; ev.msg += ' ' + LUDO_COLORS[corner[pl]] + ' জিতল!';
+        g.finished.push(pl); extra = false;
+        ev.msg += ' ' + LUDO_COLORS[corner[pl]] + (g.finished.length === 1 ? ' জিতল!' : ' ' + ['', 'দ্বিতীয়', 'তৃতীয়'][g.finished.length - 1] + ' হল!');
+        if (g.finished.length >= n - 1) g.done = true;
       }
     }
     if (extra) g.sixes = roll === 6 ? g.sixes + 1 : g.sixes; else g.sixes = 0;
     if (g.sixes >= 3) { extra = false; g.sixes = 0; }
-    if (!extra && !g.done) g.turn = (g.turn + 1) % n;
+    if (!extra && !g.done) { do { g.turn = (g.turn + 1) % n; } while (g.finished.includes(g.turn)); }
     g.last = ev;
     return ev;
   };

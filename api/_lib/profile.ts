@@ -27,6 +27,6 @@ export function shape(e: Row, ratings: Ratings = base()) {
     empId: e.emp_id, name: e.name, email: e.email, designation: e.designation, branch: e.branch, department: e.department,
     gender: e.gender === 'female' ? 'f' : e.gender === 'male' ? 'm' : '', nickname: e.nickname || '',
     avatar: e.avatar || (e.gender === 'female' ? '👩‍💻' : '🧑‍💻'), avatarBg: e.avatar_bg || '#ffd9a8',
-    xp: Number(e.xp) || 0, model: e.model == null ? 0 : Number(e.model), bio: e.bio || '', snack: e.snack || '', phone: e.phone || '', ratings,
+    xp: Number(e.xp) || 0, employment: e.employment == null ? 100 : Number(e.employment), model: e.model == null ? 0 : Number(e.model), bio: e.bio || '', snack: e.snack || '', phone: e.phone || '', ratings,
   };
 }

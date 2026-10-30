@@ -261,7 +261,7 @@ function laptop(x,z,ry,scr,y){const g=grp(staticG,x,y||.75,z,ry);bx(g,.32,.015,.
 /* ================= people ================= */
 const JN=['spine','neck','head','lSh','rSh','lEl','rEl','lHand','rHand','lHip','rHip','lKn','rKn','lAn','rAn'];
 const SKINS=['#c48a5f','#b07a50','#d6a378','#9a6844','#a87452','#dcae84','#8c5c3c'];
-const people=[];
+const people=[];let PHN=1;   // PHN: everybody gets the same per-person phase on every screen, so the office animates in step
 const Gs=(v,m,s)=>{const d=(v-m)/s;return Math.exp(-d*d);};
 // sculpt a unit-sphere point (front = +z) into a human head shape, in metres
 function sculpt(x,y,z,f){
@@ -322,7 +322,7 @@ const REG={
   mous:(x,y,z)=>z>.72&&y>-.5&&y<-.38&&Math.abs(x)<.34};
 const OFF={short:(x,y,z)=>.055+.05*Math.max(0,y)+.02*Math.max(0,-z),bald:.04,long:(x,y,z)=>.06+.04*Math.max(0,y),hijab:.12,beard:.03,mous:.035};
 function makePerson(o){
-  const f=o.g==='f',P={o,s:o.h,J:{},ph:Math.random()*30,blink:1+Math.random()*4,yaw:0,x:0,z:0};
+  const f=o.g==='f',P={o,s:o.h,J:{},ph:(PHN++*13.37)%30,blink:0,yaw:0,x:0,z:0};
   const root=new THREE.Group();root.scale.setScalar(o.h);scene.add(root);P.root=root;
   const FAB={map:TX.fabric};
   const sk=mat(o.skin,.55),skH=mat(o.skin,.5,0,{vertexColors:true}),top=mat(o.top,.92,0,FAB),bot=mat(o.bot,.88,0,o.jeans?{map:TX.denim}:FAB),
@@ -399,7 +399,7 @@ function rest(P){const J=P.J;for(const n of JN)J[n].rotation.set(0,0,0);J.hips.r
 function sit(P,seat){const J=P.J,sl=seat/P.s;J.hips.position.y=sl+.1;const th=Math.asin(clamp((sl+.07-.4975)/.44,-.3,.8)),a=Math.PI/2-th;
   J.lHip.rotation.x=J.rHip.rotation.x=-a;J.lKn.rotation.x=J.rKn.rotation.x=a;J.lHip.rotation.z=.06;J.rHip.rotation.z=-.06;if(J.skirt)J.skirt.scale.y=.3;}
 function talk(P,t,on){P.J.mouth.scale.y=on?.0025+Math.abs(Math.sin(t*11+P.ph))*.011:.0025;}
-function life(P,t,dt){P.blink-=dt;if(P.blink<0)P.J.lids[0].rotation.x=P.J.lids[1].rotation.x=.6;if(P.blink<-.12)P.blink=2+Math.random()*4;
+function life(P,t,dt){if((t+P.ph*1.3)%4.3>4.18)P.J.lids[0].rotation.x=P.J.lids[1].rotation.x=.6;   // blinks follow the shared clock too
   P.J.spine.rotation.x+=Math.sin(t*1.7+P.ph)*.012;}
 const _ia=new THREE.Vector3(),_ib=new THREE.Vector3(),_ic=new THREE.Vector3(),_id=new THREE.Vector3(),_iq=new THREE.Quaternion(),_iq2=new THREE.Quaternion(),_vt=new THREE.Vector3();
 const PB=new THREE.Vector3(1,-.4,0),PG=new THREE.Vector3(-.4,.5,-1),PTL=new THREE.Vector3(.6,-1,-.3),PTR=new THREE.Vector3(-.6,-1,-.3),PCL=new THREE.Vector3(.7,-1,0),PCR=new THREE.Vector3(-.7,-1,0);
@@ -457,7 +457,7 @@ const _v=new THREE.Vector3(),_v2=new THREE.Vector3();
 
 /* ================= disc physics (pool and carrom) ================= */
 // table sound, quieter the further the camera is from the table
-function tsnd(Tb,name,v){const d=Math.hypot(camera.position.x-Tb.cx,camera.position.y-Tb.y,camera.position.z-Tb.cz);// walking: only heard inside the gaming room, silent everywhere else. orbit/top view: only when the camera is zoomed in close.
+function tsnd(Tb,name,v){if(CATCH)return;const d=Math.hypot(camera.position.x-Tb.cx,camera.position.y-Tb.y,camera.position.z-Tb.cz);// walking: only heard inside the gaming room, silent everywhere else. orbit/top view: only when the camera is zoomed in close.
   let f;if(mode==='walk')f=lastZone==='game'?1:0;else f=d<16?Math.min(1,1.2-d/16):0;
   if(f<=0.02)return;sfx.play(Tb.snd+name,f*v);}
 function stepDiscs(Tb,dt){const n=6,h=dt/n,B=Tb.balls;
@@ -499,7 +499,7 @@ const ZONES=[
   {id:'gate',bn:'মেইন গেট ও লিফট',en:'Main gate',what:'উপরের দেয়ালের ঠিক মাঝখানে, ঝাপসা কাচের বন্ধ দরজা। ভেতরে দরজার পাশে এক্সিট বাটন, বাইরে ফেস স্ক্যানার। হেঁটে দেখুন মোডে কাছে গিয়ে E চাপুন।',r:[-1.7,3.7,-15.9,-13.5],c:[1,-14.7],sp:[1,-14.2]}
 ];
 // random numbers the pool and carrom controllers use. A live match swaps in a seeded one so both players see the same game.
-let SRP=Math.random,SRC=Math.random;
+let SRP=Math.random,SRC=Math.random,CATCH=false;   // CATCH: the ambient games are fast-forwarding, so stay quiet
 const acts=[]; // {P, fn}
 const DESKS=[];   // every desk seat [x,z,yaw,role]; .occ is set when someone sits there
 let POOL,CARROM=null,TT=null,GATE=null;
@@ -839,7 +839,7 @@ function vehicle(kind,lane,z){const g=new THREE.Group();let speed;const b=(w,h,d
   else if(kind==='cng'){b(1.3,1.2,2.4,.3,'#2e9e4f');b(1.32,.08,2.42,1.5,'#246f3a');speed=3;}
   else if(kind==='bus'){b(2.5,2.6,9,.35,lane?'#2f5fa6':'#b8452f');b(2.52,.6,8.6,1.6,'#2a3440');speed=2.2;}
   else{b(1.8,.8,4.2,.3,lane?'#e9e9e6':'#4b4f57');b(1.6,.55,2.1,1.1,'#2a3440',-.2);speed=3.4;}
-  g.position.set(z,GY+.04,lane?21.7:18.3);g.rotation.y=lane?-Math.PI/2:Math.PI/2;scene.add(g);traffic.push({g,dir:lane?-1:1,speed,kind});}
+  g.position.set(z,GY+.04,lane?21.7:18.3);g.rotation.y=lane?-Math.PI/2:Math.PI/2;scene.add(g);traffic.push({g,dir:lane?-1:1,speed,kind,x0:z});}
 
 /* ================= activities ================= */
 function aType(P,t,dt){rest(P);sit(P,P.seat||.48);const J=P.J,c=(t+P.ph)%28;
@@ -1023,40 +1023,39 @@ function carromUpdate(t,dt){if(!CARROM)return;const S=CARROM,T=S.T;stepDiscs(T,d
     case 'watch':{if(moving(T)){S.t=0;break;}S.t+=dt;if(S.t<.6)break;S.hit=false;
       const potC=T.potted.some(b=>!b.striker),foul=!st.on;st.on=true;st.mesh.visible=true;
       if(potC&&!foul){cur.cheer=1.3;S.buzz=1.2;if(S.sc)S.sc[S.turn]+=T.potted.filter(b=>!b.striker).length;}else{do{S.turn=(S.turn+1)%4;}while(S.skip&&S.skip.includes(S.turn));}
-      if(S.coins.filter(c=>c.on).length<=4){for(const c of S.coins){c.on=true;c.mesh.visible=true;c.x=c.home[0];c.z=c.home[1];c.vx=c.vz=0;}}
+      if(S.sc){if(S.coins.filter(c=>c.on).length<=1){S.over=true;S.state='done';S.t=0;break;}}
+      else if(S.coins.filter(c=>c.on).length<=4){for(const c of S.coins){c.on=true;c.mesh.visible=true;c.x=c.home[0];c.z=c.home[1];c.vx=c.vz=0;}}
       S.state='place';S.t=0;break;}}
 }
 
 
 /* ================= balcony chatter: speech bubbles over the heads of the people on the balcony ================= */
-// The conversations live in chatter.js. Keys: se / qa / des (the same person each time a key repeats in one conversation).
+// The conversations live in chatter.js. Which one plays, who says what and when are all worked out from the shared clock, so everybody hears the same one.
 const ROLE_TAG={se:'SE',qa:'QA',des:'ডিজাইনার'};
-const chat={conv:null,i:0,t:0,dur:0,gap:1.5,who:{},el:null,last:-1,line:null};
-function startConvo(){let k;do{k=Math.floor(Math.random()*CONVOS.length);}while(k===chat.last&&CONVOS.length>1);chat.last=k;chat.conv=CONVOS[k];chat.i=0;chat.who={};}
-// the person who says this line: the same person every time that key comes up in the conversation
-function speakerFor(key){if(chat.who[key])return chat.who[key];
-  const used=Object.values(chat.who),pool=BAL.filter(b=>b.role===key),free=pool.filter(b=>!used.includes(b)),from=free.length?free:pool;
-  return chat.who[key]=from[Math.floor(Math.random()*from.length)];}
-function hideBubble(){if(chat.el)chat.el.classList.remove('on');}
+const CHAT_SLOT=50;
+const chat={slot:-1,lines:[],el:null,idx:-2};
+function buildChat(slot){const rng=mulberry32(slot*7919+13),conv=CONVOS[Math.floor(rng()*CONVOS.length)],who={},lines=[];let at=1.5;
+  for(const [key,text] of conv){let sp=who[key];
+    if(!sp){const used=Object.values(who),pool=BAL.filter(b=>b.role===key),free=pool.filter(b=>!used.includes(b)),from=free.length?free:pool;sp=who[key]=from[Math.floor(rng()*from.length)];}
+    const dur=Math.min(7,1.8+text.length*.07);lines.push({at,dur,sp,text});at+=dur+.45;}
+  chat.slot=slot;chat.lines=lines;chat.idx=-2;}
+function hideBubble(){if(chat.el)chat.el.classList.remove('on');chat.idx=-2;}
 function updateTalk(dt){
   if(!BAL.length)return;
   if(!chat.el){chat.el=document.createElement('div');chat.el.className='bub';bubbleLayer().appendChild(chat.el);}
   const d=Math.hypot(camera.position.x-6,camera.position.y-1.5,camera.position.z-8.7);
-  if(d>(mode==='walk'?17:30)){hideBubble();chat.line=null;return;}   // only chatter when you are near the balcony
-  if(!chat.line){chat.gap-=dt;if(chat.gap>0)return;
-    if(chat.conv&&chat.i>=chat.conv.length){chat.conv=null;chat.gap=3+Math.random()*4;return;}
-    if(!chat.conv)startConvo();
-    const [key,text]=chat.conv[chat.i++],sp=speakerFor(key);
-    chat.line={sp};chat.t=0;chat.dur=Math.min(7,1.8+text.length*.07);
-    chat.el.innerHTML='<i class="tag '+sp.role+'">'+ROLE_TAG[sp.role]+'</i><span></span>';chat.el.lastChild.textContent=text;chat.el.classList.add('on');sfx.play('pop',.25);}
-  chat.line.sp.P.J.neck.getWorldPosition(_v);_v.y+=.3;_v.project(camera);
-  const onScreen=!(_v.z>1||_v.z<-1||Math.abs(_v.x)>1.05||Math.abs(_v.y)>1.05);
-  if(onScreen){chat.t+=dt;chat.off=0;}else{chat.off=(chat.off||0)+dt;if(chat.off>10)chat.t=chat.dur+1;}   // the line waits until you can see who is talking
-  if(!onScreen)chat.el.style.visibility='hidden';
-  else{chat.el.style.visibility='';const w=stage.clientWidth,h=stage.clientHeight,bw=chat.el.offsetWidth;
-    const x=Math.max(bw/2+6,Math.min(w-bw/2-6,(_v.x*.5+.5)*w)),y=(-_v.y*.5+.5)*h;
-    chat.el.style.transform='translate('+x+'px,'+y+'px) translate(-50%,-100%)';}
-  if(chat.t>chat.dur){hideBubble();chat.line=null;chat.gap=.45;}}
+  if(d>(mode==='walk'?17:30)){hideBubble();return;}   // only chatter when you are near the balcony
+  const w=worldT(),slot=Math.floor(w/CHAT_SLOT),off=w-slot*CHAT_SLOT;
+  if(chat.slot!==slot)buildChat(slot);
+  const i=chat.lines.findIndex(l=>off>=l.at&&off<l.at+l.dur);
+  if(i<0){hideBubble();return;}
+  const L=chat.lines[i];
+  if(i!==chat.idx){chat.idx=i;chat.el.innerHTML='<i class="tag '+L.sp.role+'">'+ROLE_TAG[L.sp.role]+'</i><span></span>';chat.el.lastChild.textContent=L.text;chat.el.classList.add('on');}
+  L.sp.P.J.neck.getWorldPosition(_v);_v.y+=.3;_v.project(camera);
+  if(_v.z>1||_v.z<-1||Math.abs(_v.x)>1.05||Math.abs(_v.y)>1.05)chat.el.style.visibility='hidden';
+  else{chat.el.style.visibility='';const w2=stage.clientWidth,h2=stage.clientHeight,bw=chat.el.offsetWidth;
+    const x=Math.max(bw/2+6,Math.min(w2-bw/2-6,(_v.x*.5+.5)*w2)),y=(-_v.y*.5+.5)*h2;
+    chat.el.style.transform='translate('+x+'px,'+y+'px) translate(-50%,-100%)';}}
 
 /* ================= labels ================= */
 const labelLayer=document.getElementById('labels'),labels=[];
@@ -1108,6 +1107,10 @@ function syncFold(){const f=panel.classList.contains('folded');burger.hidden=!f;
 function wireUI(){
   document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
   document.getElementById('tgWalls').addEventListener('click',()=>setWalls(!tallWalls));
+  // the game is in Bengali; the small English captions under the labels are off unless asked for
+  const tgEn=document.getElementById('tgEn'),setEn=on=>{document.body.classList.toggle('en',on);tgEn.setAttribute('aria-pressed',String(on));try{localStorage.setItem('cb-en',on?'1':'0');}catch(e){}};
+  try{setEn(localStorage.getItem('cb-en')==='1');}catch(e){}
+  tgEn.addEventListener('click',()=>setEn(!document.body.classList.contains('en')));
   document.getElementById('tgLabels').addEventListener('click',e=>{labelsOn=!labelsOn;e.currentTarget.setAttribute('aria-pressed',String(labelsOn));});
   foldBtn.addEventListener('click',()=>{panel.classList.add('folded');syncFold();});
   burger.addEventListener('click',()=>{panel.classList.remove('folded');syncFold();});
@@ -1119,7 +1122,7 @@ function wireUI(){
   const KM={KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',ShiftLeft:'run',ShiftRight:'run'};
   addEventListener('keydown',e=>{if(mode!=='walk')return;if(e.code==='KeyE'){interact();return;}if(KM[e.code]){keys[KM[e.code]]=true;if(e.code.startsWith('Arrow'))e.preventDefault();}});
   addEventListener('keyup',e=>{if(KM[e.code])keys[KM[e.code]]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
-  document.getElementById('hudAct').addEventListener('click',()=>interact());wireMatchUI();wireNetUI();
+  document.getElementById('hudAct').addEventListener('click',()=>interact());wireMatchUI();wireNetUI();wireBossUI();
   const hold=(id,k)=>{const b=document.getElementById(id),on=e=>{e.preventDefault();keys[k]=true;try{b.setPointerCapture(e.pointerId);}catch(_){}},off=()=>{keys[k]=false;};
     b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('lostpointercapture',off);b.addEventListener('contextmenu',e=>e.preventDefault());};
   hold('bLookL','lookL');hold('bLookR','lookR');
@@ -1167,7 +1170,7 @@ function initLogin(){
       .then(async r=>{let d=null;try{d=await r.json();}catch(e){}return {r,d};});
     Promise.all([wait,call]).then(([,{r,d}])=>{
       if(!r.ok||!d||!d.ok){fail(d&&d.error?d.error:'সার্ভারে সংযোগ হয়নি। `vercel dev` দিয়ে চালাচ্ছেন তো? কিছুক্ষণ পর আবার চেষ্টা করুন।');return;}
-      go.classList.remove('scan');sfx.play('ok');sfx.ambience(true);CLK.on=true;CLK.min=OPEN_MIN;CLK.shown=-1;startNet();const emp=d.employee,name=emp.name;
+      go.classList.remove('scan');sfx.play('ok');sfx.ambience(true);CLK.on=true;CLK.t=0;CLK.shown=-1;CLK.free=null;if(d.serverNow)NET.skew=d.serverNow-Date.now();startNet();const emp=d.employee,name=emp.name;
       const late=mins-0;say('হাজিরা হয়েছে! আপনি '+BN(late)+' মিনিট লেট। চাকরির মিটার থেকে '+BN(Math.min(20,Math.round(late/3)))+'% কাটা গেল।','ok');goTxt.textContent='স্বাগতম, '+name+'!';
       try{if(document.getElementById('remember').checked)localStorage.setItem('cb-login',JSON.stringify({email,role}));else localStorage.removeItem('cb-login');}catch(e){}
       window.CB_PLAYER={name,role,late,empId:emp.empId,designation:emp.designation,branch:emp.branch,department:emp.department,promise:document.getElementById('promise').checked};initProfile(emp);
@@ -1177,6 +1180,36 @@ function initLogin(){
   document.getElementById('lform').addEventListener('submit',e=>{e.preventDefault();enter('finger');});
   document.getElementById('faceBtn').addEventListener('click',()=>enter('face'));
   L.hidden=false;setTimeout(()=>{PAUSE3D=true;},1500);setTimeout(()=>{try{(nm.value?pw:nm).focus({preventScroll:true});}catch(e){}},300);}
+
+/* ================= shared clock ================= */
+const WORLD_EPOCH=Date.UTC(2026,0,1);
+const worldT=()=>(Date.now()+NET.skew-WORLD_EPOCH)/1000;   // seconds of shared time, the same on every screen once the server clock offset is known
+// The office day is 1:30 PM to 10:00 PM Dhaka time, and the dining room is free from 5 PM until the next day's 1:30 PM.
+const OPEN_MIN=13*60+30,CLOSE_MIN=22*60,FREE_MIN=17*60;
+const CLK={on:false,min:-1,shown:-1,free:null,t:0};
+const officeOpen=m=>m>=OPEN_MIN&&m<CLOSE_MIN,diningBusy=m=>m>=OPEN_MIN&&m<FREE_MIN;
+const periodBn=h=>h>=5&&h<12?'সকাল':h<15?'দুপুর':h<17?'বিকেল':h<19?'সন্ধ্যা':'রাত';
+function dhakaMinutes(){const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Dhaka',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date(Date.now()+NET.skew));
+  return (+p.find(x=>x.type==='hour').value%24)*60+ +p.find(x=>x.type==='minute').value;}
+function clockTick(dt){if(!CLK.on)return;CLK.t-=dt;if(CLK.t>0)return;CLK.t=1;
+  const m=dhakaMinutes();CLK.min=m;
+  if(m!==CLK.shown){CLK.shown=m;const h=Math.floor(m/60);byId('hudClock').textContent='🕐 '+periodBn(h)+' '+bnd(((h+11)%12)+1)+':'+bnd(String(m%60).padStart(2,'0'))+' · '+(officeOpen(m)?'অফিস চলছে':'অফিস বন্ধ');}
+  const free=!diningBusy(m);
+  if(free!==CLK.free&&!MT){const first=CLK.free===null;CLK.free=free;for(const a of acts)if(a.fn===aEat)a.P.root.visible=!free;
+    if(free&&!first)toast('ডাইনিং এখন ফাঁকা, টেবিলে গিয়ে উনো, দাবা বা লুডু খেলতে পারেন।',6000);}}
+/* ---- the ambient pool and carrom games: the same on every screen ---- */
+// The game restarts every AMB_LEN seconds of shared time with a seed taken from that slot, and a screen that joins late fast-forwards it.
+const AMB_LEN=120,AMB={p:{slot:-1,n:0,needs:true,rng:null},c:{slot:-1,n:0,needs:true,rng:null}};
+function poolFresh(S){const T=S.T;S.rack();S.groups=[null,null];S.wins=[0,0];S.games=1;S.breakNext=true;S.wasBreak=false;S.ballInHand=false;S.hit=false;S.line=null;S.winner=null;S.shot=null;S.stand=null;S.onEight=false;T.potted=[];T.firstHit=null;S.shooter=S.breaker=0;S.state='plan';S.t=0;S.msg='';
+  for(const P of S.players){P.path=[];P.cheer=0;P.speed=1.05;}place(S.players[0],.8,5,Math.PI/2);place(S.players[1],4.75,6.9,-2.2);}
+function ambUpdate(t){
+  const slot=Math.floor(t/AMB_LEN),base=slot*AMB_LEN,target=Math.floor((t-base)*60);
+  if(MT&&MT.state==='play'&&MT.game==='pool')AMB.p.needs=true;
+  else{const a=AMB.p;if(a.needs||a.slot!==slot){a.slot=slot;a.n=0;a.needs=false;a.rng=mulberry32(slot*2+1);SRP=a.rng;poolFresh(POOL);}
+    SRP=a.rng;let k=0;CATCH=target-a.n>8;while(a.n<target&&k++<400){a.n++;poolUpdate(base+a.n/60,1/60);}CATCH=false;}
+  if(MT&&MT.state==='play'&&MT.game==='carrom')AMB.c.needs=true;
+  else{const a=AMB.c;if(a.needs||a.slot!==slot){a.slot=slot;a.n=0;a.needs=false;a.rng=mulberry32(slot*2+2);SRC=a.rng;resetCoins(CARROM);}
+    SRC=a.rng;let k=0;CATCH=target-a.n>8;while(a.n<target&&k++<400){a.n++;carromUpdate(base+a.n/60,1/60);}CATCH=false;}}
 
 /* ================= challenges: pool, carrom (game room) and uno, chess, ludo (dining room) ================= */
 // Flow: walk up to a table, press E, pick who to invite, walk to their desk, challenge them, walk to the table together,
@@ -1240,19 +1273,6 @@ const RANKS=[[0,'প্রোবেশনার'],[50,'জুনিয়র'],[
 function rankOf(xp){let r=RANKS[0];for(const k of RANKS)if(xp>=k[0])r=k;return r[1];}
 const shortName=n=>String(n||'').trim().split(/\s+/)[0]||'';
 const bnd=s=>String(s).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]);
-
-/* ---- the office day: 1:30 PM to 10:00 PM, and the dining room is free from 5 PM ---- */
-// One office minute is 3 real seconds, so the day runs about 25 minutes. Set CLOCK_REAL to follow the real time in Dhaka instead.
-const CLOCK_REAL=false,OPEN_MIN=13*60+30,CLOSE_MIN=22*60,FREE_MIN=17*60;
-const CLK={on:false,min:OPEN_MIN,shown:-1,free:false};
-function clockTick(dt){if(!CLK.on||MT)return;   // time stands still during a match
-  if(CLOCK_REAL){const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Dhaka',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date()),h=+p.find(x=>x.type==='hour').value%24,m=+p.find(x=>x.type==='minute').value;CLK.min=h*60+m;}
-  else{CLK.min+=dt/3;if(CLK.min>=CLOSE_MIN){CLK.min=OPEN_MIN;toast('অফিস ছুটি হয়ে গেল! নতুন দিন, আবার দেড়টা বাজে।',4500);}}
-  const m=Math.floor(CLK.min);
-  if(m!==CLK.shown){CLK.shown=m;const h=Math.floor(m/60);byId('hudClock').textContent='🕐 '+bnd(((h+11)%12)+1)+':'+bnd(String(m%60).padStart(2,'0'))+(h>=12?' PM':' AM');}
-  const free=CLK.min>=FREE_MIN&&CLK.min<CLOSE_MIN;
-  if(free!==CLK.free){CLK.free=free;for(const a of acts)if(a.fn===aEat)a.P.root.visible=!free;
-    if(free)toast('বিকেল ৫টা বাজল! ডাইনিং এখন ফাঁকা, টেবিলে গিয়ে উনো, দাবা বা লুডু খেলতে পারেন।',6000);}}
 
 /* ---- path finding on a grid of the same collision test the player uses ---- */
 const GR=.3,GX0=-16,GZ0=-16,GNX=Math.ceil(34.7/GR)+1,GNZ=Math.ceil(26.7/GR)+1;
@@ -1440,15 +1460,13 @@ function beginPool(m){const S=POOL,T=S.T,[A,B]=m.parts;
   SRP=mulberry32(m.seed);
   S.rack();S.groups=[null,null];S.wins=[0,0];S.games=1;S.breakNext=true;S.wasBreak=false;S.ballInHand=false;S.hit=false;S.line=null;S.winner=null;S.shot=null;S.stand=null;S.onEight=false;T.potted=[];T.firstHit=null;
   S.breaker=S.shooter=SRP()<.5?0:1;for(const P of[A,B]){P.path=[];P.cheer=0;P.speed=1.05;}place(A,S.wait[0][0],S.wait[0][1],Math.PI/2);place(B,S.wait[1][0],S.wait[1][1],-Math.PI/2);
-  S.state='plan';S.t=0;S.msg=PN[S.breaker]+' ব্রেক করবে।';m.limit=60;m.camPos=new THREE.Vector3(-1,3.5,2.8);m.camTo=new THREE.Vector3(3.2,.5,5.3);}
-function endPool(m){const S=POOL,T=S.T;SRP=Math.random;S.players=m.saved.players;PN[0]=m.saved.pn[0];PN[1]=m.saved.pn[1];S.players.forEach(p=>{p.root.visible=true;p.path=[];});
-  S.rack();S.groups=[null,null];S.wins=[0,0];S.games=1;S.breakNext=true;S.wasBreak=false;S.ballInHand=false;S.hit=false;S.line=null;S.winner=null;T.potted=[];T.firstHit=null;S.shooter=S.breaker=0;
-  place(S.players[0],.8,5,Math.PI/2);place(S.players[1],4.75,6.9,-2.2);S.state='plan';S.t=0;S.msg=PN[0]+' ব্রেক করবে।';updBoard();}
-function resetCoins(S){for(const c of S.coins){c.on=true;c.mesh.visible=true;c.x=c.home[0];c.z=c.home[1];c.vx=c.vz=0;}S.striker.on=true;S.striker.mesh.visible=true;S.striker.vx=S.striker.vz=0;S.cp=null;S.hit=false;S.turn=0;S.state='place';S.t=0;S.buzz=0;S.shot=null;S.T.potted=[];}
+  S.state='plan';S.t=0;S.msg=PN[S.breaker]+' ব্রেক করবে।';m.limit=720;m.camPos=new THREE.Vector3(-1,3.5,2.8);m.camTo=new THREE.Vector3(3.2,.5,5.3);}
+function endPool(m){const S=POOL;SRP=Math.random;S.players=m.saved.players;PN[0]=m.saved.pn[0];PN[1]=m.saved.pn[1];S.players.forEach(p=>{p.root.visible=true;p.path=[];});AMB.p.needs=true;}
+function resetCoins(S){for(const c of S.coins){c.on=true;c.mesh.visible=true;c.x=c.home[0];c.z=c.home[1];c.vx=c.vz=0;}S.striker.on=true;S.striker.mesh.visible=true;S.striker.vx=S.striker.vz=0;S.cp=null;S.hit=false;S.over=false;S.turn=0;S.state='place';S.t=0;S.buzz=0;S.shot=null;S.T.potted=[];}
 function beginCarrom(m){const S=CARROM,T=S.T,[A,B]=m.parts;
   m.saved={players:S.players};S.players.forEach(p=>{p.root.visible=false;});S.players=[A,S.players[1],B,S.players[3]];S.skip=[1,3];S.sc=[0,0,0,0];SRC=mulberry32(m.seed);
-  resetCoins(S);for(const P of[A,B]){P.cheer=0;P.speed=1.05;}place(A,T.cx,T.cz+.72,Math.PI);place(B,T.cx,T.cz-.72,0);m.limit=45;m.camPos=new THREE.Vector3(.7,2.8,3.3);m.camTo=new THREE.Vector3(-1.8,.7,5);}
-function endCarrom(m){const S=CARROM;SRC=Math.random;S.players=m.saved.players;S.players.forEach(p=>{p.root.visible=true;});S.skip=null;S.sc=null;resetCoins(S);}
+  resetCoins(S);for(const P of[A,B]){P.cheer=0;P.speed=1.05;}place(A,T.cx,T.cz+.72,Math.PI);place(B,T.cx,T.cz-.72,0);m.limit=480;m.camPos=new THREE.Vector3(.7,2.8,3.3);m.camTo=new THREE.Vector3(-1.8,.7,5);}
+function endCarrom(m){const S=CARROM;SRC=Math.random;S.players=m.saved.players;S.players.forEach(p=>{p.root.visible=true;});S.skip=null;S.sc=null;AMB.c.needs=true;}
 
 /* ---- dining table games: board, pieces and cards on the table ---- */
 const TABLE_Y=.772;   // just above the little coaster that sits in the middle of each table
@@ -1558,12 +1576,94 @@ function makeUnoViz(m,c){const grp=new THREE.Group(),sim=m.sim,n=sim.n;grp.posit
     onEvent(ev){if(!ev)return;if(ev.card)setTop(ev.card,ev.color);for(let i=0;i<n;i++)hand(i);focus.set(c.x+.02,.78,c.z);},
     update(){},dispose(){back.dispose();disposeGroup(grp);}};}
 
+/* ---- slagging during the games: funny Bengali trash talk ---- */
+// Who says what, and when, comes from the match's own seed and steps, so every screen shows the same insult at the same moment.
+// {n} is replaced by the name of the person it is aimed at.
+const BANTER={
+  any:{
+    idle:['এত আস্তে খেলছ কেন, আমার চা ঠান্ডা হয়ে গেল!','জিতলে কিন্তু ট্রিট দিতে হবে, আগেই বলে রাখলাম!','{n}, তোমার খেলা দেখে আমার ঘুম আসছে!','বস দেখলে আমাদের দুজনকেই উড়িয়ে দেবে, তাও খেলা চাই!','চুপচাপ খেলো, নইলে সবাইকে বলে দেব তুমি অফিস টাইমে খেলছ!','{n}, তুমি কি প্র্যাকটিস করেছ, নাকি ইউটিউবে দেখে এসেছ?','আজকের দিনটা আমার, কাল না হয় তোমার!','এই খেলায় হারলে কিন্তু রেজিগনেশন দিতে হবে… মজা করলাম!'],
+    reply:['হা হা! আগে জেতো, তারপর কথা বলো!','বেশি কথা কেন? খেলা দেখাও!','দেখা যাবে শেষ পর্যন্ত, বন্ধু!','চুপ! মনোযোগ নষ্ট হচ্ছে!','আমাকে ভয় দেখাচ্ছ? আমি সিইওর সামনেও কথা বলি!','আরে আস্তে! {n} তো প্রচুর কথা বলে!','মুখে মুখে জিতলে তো তুমি চ্যাম্পিয়ন!','আগে হাত চালাও, মুখ না!'],
+    victim:['আরে! এটা কি ন্যায্য খেলা?','আমি প্রতিশোধ নেব, লিখে রাখো!','এই শোধ আমি তুলবই!'],
+  },
+  pool:{
+    pot:['দেখলি? এটাকে বলে প্রফেশনাল শট!','সরি, হাত কাঁপেনি… ইচ্ছা করেই ফেললাম!','{n}, চশমাটা মুছে নাও, আরও দেখতে হবে!','এটা শট না, এটা শিল্প!','আজ আমার টেবিল, আমার নিয়ম!','{n} ভাই, একটা চা অর্ডার করে রাখো, তোমার পয়সায়!'],
+    foul:['ফাউল! সাদা বলকে এত ভালোবাসলে বিয়ে করে ফেলো!','আরে ভাই, বলটা পকেটে ফেলার কথা, নিজে ঢুকে গেল!','{n}, এটা পুল, গলফ না!','ফাউল ফাউল! রেফারি কই?','সাদা বলটা তোমার সাথে কী শত্রুতা করল?'],
+    miss:['ওটা কি শট ছিল, নাকি টেবিল মুছছিলে?','বলটা এত ডানে গেল, ওয়াশরুমে পৌঁছে যাবে!','{n}, কিউটা উল্টো ধরোনি তো?','মিস! আমি তো ভেবেছিলাম তুমি ইচ্ছা করে মিস করলে!','এত জোরে মারলে বল ছাদে উঠবে!'],
+  },
+  carrom:{
+    pot:['ঢুকে গেল! পাউডার না দিলেও আমি পারি!','{n}, পাউডার কম দিয়েছ, তাই স্ট্রাইকার পিছলে গেল!','এক ফ্লিকে কয়েন পকেটে, দেখে শেখো!','রানি আমার পকেটে, তোমার কপালে ঠনঠন!','{n}, তোমার কয়েনগুলো আমার সংগ্রহে যোগ হলো!'],
+    miss:['স্ট্রাইকারকে এত জোরে মেরো না, ও ব্যথা পায়!','এটা ক্যারম, ক্রিকেট না, ছক্কা মারছ কেন?','কয়েনগুলো তো পালাচ্ছে না, ধরো!','{n}, আঙুল দিয়ে মারছ নাকি পা দিয়ে?'],
+  },
+  chess:{
+    cap:['ঘোড়াটা তো গেল, এবার কি পায়ে হেঁটে যাবে?','ধন্যবাদ, উপহারের জন্য!','{n}, এটা ফ্রি-তে দিলে কেন, অফার চলছে নাকি?','মন্ত্রী গেল! এবার রাজা ঘুমাবে না!','তোমার ঘুঁটি এখন আমার হাতে, চা খাওয়ার আগেই!'],
+    check:['চেক! রাজা সাহেব, দৌড় দাও!','রাজা কোথায় যাবে, দরজায় তো তালা!','এই যে চেক, চা খেয়ে এসে চাল দাও!'],
+    promo:['দেখো, সৈনিক এখন রানি! প্রমোশন পেল, তোমার মতো না!','একটা প্রমোশন দিলাম, অফিসে তো পাও না!'],
+    mate:['চেকমেট! চা-নাশতা কনফার্ম!','রাজা শহীদ হলেন! সবাই মিনিট নীরবতা পালন করো!'],
+    idle:['চাল দিতে এত সময় নিচ্ছ, টাইমআউট হবে তো!','ভাবছ? মাথায় তো কিছু নেই, শুধু ভাবছ!','এই চালটা কি ইন্টারনেট থেকে কপি করলে?','তোমার ঘুঁটিগুলো সব ছুটিতে নাকি?','{n}, দাবা না খেলে লুডু খেলো, তোমার জন্য সহজ!'],
+  },
+  ludo:{
+    cap:['ফিরে যা ঘরে, এখন ছয় না পেলে বের হতে পারবি না!','কাটা পড়ল! বাসায় গিয়ে একটু ঘুমাও!','এই কাটার জন্য আমি সারা জীবন অপেক্ষা করেছি!','{n}, এত তাড়াতাড়ি এগোলে তো কাটা পড়বেই!'],
+    victim:['আরে! আমার গুটিটা কাটলে কেন!','এটা কি ন্যায্য খেলা? ডাইসে জাদু করা আছে!','আমি প্রতিশোধ নেব, লিখে রাখো!','আমার গুটি কাটার ঋণ সুদে-আসলে শোধ করব!'],
+    six:['ছক্কা! ডাইস আমার পকেটে!','আবার ছয়! আমি জন্মেছি লুডুর জন্য!','ছয় ছয় ছয়, তোমার পালা কবে আসবে?'],
+    home:['ঘরে ঢুকে গেলাম, দরজা বন্ধ!','একটা গুটি ঘরে, বাকিগুলো ঘরে যেতে অপেক্ষা করছে!'],
+    idle:['তোমার ডাইস কি ছুটিতে? এক-দুইয়ের বেশি উঠছে না!','{n}, লুডুতেও কি ভাগ্য লাগে? তোমার তো লাগে না দেখছি!','এই ছক্কা কি তুমি পকেটে নিয়ে বসে আছ?'],
+  },
+  uno:{
+    attack:['ফ্রি কার্ড নাও! হাত ভরবে তবে মন ভরবে না!','{n}, কার্ড তোলো আর কাঁদো!','ওয়াইল্ড চার! ধন্যবাদ বলো আমাকে!','+ দুই! উপহার পাঠালাম!'],
+    skip:['তোমার পালা স্কিপ, চায়ের কাপ নিয়ে বসে থাকো!','আজ তোমার কপালে স্কিপ!','{n}, একটু বিশ্রাম নাও, আমি চালাচ্ছি!'],
+    rev:['উল্টে দিলাম! এবার তোমার পালা আমার হাতে!','রিভার্স! দুনিয়াটাই উল্টে গেল!'],
+    uno:['UNO! আমি এক কার্ড দূরে, ভয় পেলে স্বাভাবিক!','সাবধান, আমার হাতে মাত্র একটা কার্ড, কিন্তু সেটা তোমার সর্বনাশ!','এক কার্ড! মিষ্টি কিনে রাখো, আমি জিতছি!'],
+    draw:['কার্ড নেই! আমার ভাগ্যটাই এমন!','উনো ডেকটা কি আমার সাথে শত্রুতা করছে?','আরেকটা তুলতে হলো, হাতটা তো দোকান হয়ে গেল!'],
+    idle:['{n}, তোমার হাতে কত কার্ড? ওগুলো কি রেশন নাকি?','কার্ড সাজাতে সাজাতে খেলাটাই ভুলে গেলে?','এই খেলায় লুকোনোর কিছু নেই, শুধু হারানোর আছে!'],
+  },
+};
+// one of the players says something to another; whoever it is aimed at sometimes snaps back a moment later
+function banter(m,idx,cat,target,replyCat,chance){
+  const now=simElapsed(m);if(now-(m.lastTalk===undefined?-99:m.lastTalk)<(m.talkGap||5))return;   // nobody talks over anyone
+  if(chance!==undefined&&m.talkRng()>chance)return;
+  m.lastTalk=now;
+  const L=(BANTER[m.game]&&BANTER[m.game][cat])||BANTER.any[cat];if(!L)return;
+  const tg=target==null||target===idx?(idx+1)%m.ids.length:target,nm=i=>shortName(m.pnames[i]);
+  const text=L[Math.floor(m.talkRng()*L.length)].replace('{n}',nm(tg));
+  const R=(BANTER[m.game]&&BANTER[m.game][replyCat])||BANTER.any[replyCat||'reply'],again=replyCat?true:m.talkRng()<.55,back=R[Math.floor(m.talkRng()*R.length)].replace('{n}',nm(idx));
+  if(!m.watching)return;
+  say(m.parts[idx],text,3.4);
+  if(again)m.talkQ.push({at:performance.now()+2300,idx:tg,text:back});}
+function talkTick(m){const now=performance.now();for(const q of m.talkQ.slice()){if(q.at<=now){m.talkQ.splice(m.talkQ.indexOf(q),1);if(m.parts[q.idx])say(m.parts[q.idx],q.text,3);}}}
+function diningTalk(m,ev){const sim=m.sim;
+  if(m.game==='chess'){
+    if(ev.end){if(!sim.draw)banter(m,sim.winner,'mate',sim.winner===sim.who[0]?sim.who[1]:sim.who[0]);return;}
+    const spk=sim.who[ev.side],oth=sim.who[1-ev.side];
+    if(ev.promo)banter(m,spk,'promo',oth);else if(ev.cap)banter(m,spk,'cap',oth,undefined,.6);else if(ev.check)banter(m,spk,'check',oth,undefined,.7);else if(m.simN%14===0)banter(m,spk,'idle',oth,undefined,.6);}
+  else if(m.game==='ludo'){
+    if(ev.caught&&ev.caught.length)banter(m,ev.pl,'cap',ev.caught[0].pl,'victim');
+    else if(ev.moved&&ev.to===56)banter(m,ev.pl,'home',null,undefined,.6);
+    else if(ev.roll===6)banter(m,ev.pl,'six',null,undefined,.2);
+    else if(m.simN%25===0)banter(m,ev.pl,'idle',null,undefined,.5);}
+  else{
+    if(ev.card&&(ev.card.v==='d2'||ev.card.v==='w4'))banter(m,ev.pl,'attack',null);
+    else if(ev.msg&&ev.msg.includes('UNO!'))banter(m,ev.pl,'uno',null,undefined,.9);
+    else if(ev.card&&ev.card.v==='skip')banter(m,ev.pl,'skip',null,undefined,.7);
+    else if(ev.card&&ev.card.v==='rev')banter(m,ev.pl,'rev',null,undefined,.6);
+    else if(ev.drew&&!ev.card)banter(m,ev.pl,'draw',null,undefined,.35);
+    else if(m.simN%9===0)banter(m,ev.pl,'idle',null,undefined,.5);}}
+// pool and carrom: react to what the game itself reports (a ball potted, a foul, a missed shot, a coin scored)
+function tableTalk(m){const nm=m.pnames.map(shortName);
+  if(m.game==='pool'){const msg=POOL.msg||'';
+    if(msg!==m.lastMsg){m.lastMsg=msg;
+      if(msg.includes('ফাউল')){const i=nm.findIndex(n=>msg.includes(n+' পেল'));if(i>=0)banter(m,i,'foul',1-i);}
+      else if(msg.includes('আবার খেলবে')){const i=nm.findIndex(n=>msg.startsWith(n));if(i>=0)banter(m,i,'pot',1-i);}
+      else if(msg.includes('মিস')){const i=nm.findIndex(n=>msg.includes(n+' এর পালা'));if(i>=0)banter(m,i,'miss',1-i);}}}
+  else{const sc=CARROM.sc,prev=m.lastSc||[0,0,0,0];
+    if(sc[0]>prev[0])banter(m,0,'pot',1);else if(sc[2]>prev[2])banter(m,1,'pot',0);
+    m.lastSc=sc.slice();}
+  if(m.simN%900===0&&m.simN>0)banter(m,Math.floor(m.talkRng()*2),'idle',null,undefined,.7);}
 function beginDining(m){const n=m.ids.length,t=DTABLES[m.table],seats=m.seats,parts=m.parts,c=n===2?{x:t.x,z:t.z-.3}:{x:t.x,z:t.z};
   parts.forEach((P,i)=>{P.path=[];place(P,seats[i].x,seats[i].z,seats[i].yaw);P.speed=1.05;});
   const rng=mulberry32(m.seed);
-  if(m.game==='chess'){const w=rng()<.5?0:1;m.sim=createChess(w,1-w,[.55,.55],rng);m.viz=makeChessViz(m,c);m.stepDt=.28;m.limit=55;}
-  else if(m.game==='ludo'){m.sim=createLudo(n,rng);m.viz=makeLudoViz(m,c);m.stepDt=n===2?.16:.13;m.limit=75;}
-  else{m.sim=createUno(n,rng);m.viz=makeUnoViz(m,c);m.stepDt=.6;m.limit=60;}
+  if(m.game==='chess'){const w=rng()<.5?0:1;m.sim=createChess(w,1-w,[.55,.55],rng);m.viz=makeChessViz(m,c);m.stepDt=.25;m.limit=400;}
+  else if(m.game==='ludo'){m.sim=createLudo(n,rng);m.viz=makeLudoViz(m,c);m.stepDt=n===2?.14:n===3?.1:.08;m.limit=400;}
+  else{m.sim=createUno(n,rng);m.viz=makeUnoViz(m,c);m.stepDt=.6;m.limit=300;}
   m.active=0;m.reachT=0;m.msg='খেলা শুরু!';const chessy=m.game==='chess';
   m.camPos=new THREE.Vector3(t.x+.1,chessy?2.15:2.75,t.z+(chessy?.8:1.3));m.camTo=new THREE.Vector3(c.x,.75,c.z);}
 function endDining(m){if(m.viz)m.viz.dispose();m.viz=null;}
@@ -1573,17 +1673,19 @@ function diningStep(m,dt){const sim=m.sim,target=Math.min(Math.floor(m.limit/m.s
   while(m.simN<target&&!sim.done){m.simN++;const ev=sim.step();if(!ev)break;
     m.active=m.game==='chess'?(ev.side!=null?sim.who[ev.side]:m.active):ev.pl;m.reachT=m.stepDt*.9;m.viz.onEvent(ev);
     m.msg=m.game==='chess'?sim.msg:shortName(m.pnames[ev.pl])+' · '+ev.msg;
+    m.watching=target-m.simN<3;diningTalk(m,ev);
     if(m.simN>target-3)sfx.play(m.game==='ludo'?'click':'pop',.2);}
   m.viz.update(dt);
   m.reachT=Math.max(0,m.reachT-dt);const t=performance.now()/1000;
   m.parts.forEach((P,i)=>{const act=i===m.active&&m.reachT>0;seatedPose(P,t,act?Math.min(1,m.reachT/(m.stepDt*.45)):0,m.viz.focus);});}
-function tableStep(m){const target=Math.floor((nowMs(m)-m.startAt)/1000*60);let k=0;
-  while(m.simN<target&&m.simN<m.limit*60&&k++<400){m.simN++;(m.game==='pool'?poolUpdate:carromUpdate)(m.simN/60,1/60);}}
+const TABLE_SPEED=2.5;   // pool and carrom play at 2.5x so a full game takes a couple of minutes to watch; every screen uses the same factor
+function tableStep(m){const target=Math.floor((nowMs(m)-m.startAt)/1000*60*TABLE_SPEED);let k=0;
+  while(m.simN<target&&m.simN<m.limit*60&&k++<400){m.simN++;(m.game==='pool'?poolUpdate:carromUpdate)(m.simN/60,1/60);m.watching=target-m.simN<20;tableTalk(m);}}
 
 function startPlay(){const m=MT,me=PROFILE.empId;
   m.pnames=m.ids.map(id=>id===me?window.CB_PLAYER.name:m.pinfo[id].name);
   m.parts=m.ids.map((id,i)=>i===m.meIdx?player:m.opps.find(o=>o.emp.empId===id).P);
-  m.fixed=m.game==='pool'||m.game==='carrom';m.simN=0;m.rng=mulberry32((m.seed^0x5bd1e995)>>>0);
+  m.fixed=m.game==='pool'||m.game==='carrom';m.simN=0;m.talkRng=mulberry32((m.seed+99)>>>0);m.talkQ=[];m.watching=false;m.lastTalk=undefined;m.rng=mulberry32((m.seed^0x5bd1e995)>>>0);
   if(!m.live)m.startAt=nowMs(m);
   if(m.game==='pool')beginPool(m);else if(m.game==='carrom')beginCarrom(m);else beginDining(m);
   m.state='play';m.t=0;m.look=camera.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3));
@@ -1595,12 +1697,12 @@ function matchOutcome(m){
   if(m.game==='pool'){const S=POOL;let w=null;if(S.winner!=null&&m.simN>360)w=S.winner;
     else if(over){const g0=S.groups[0],g1=S.groups[1];w=m.rng()<.5?0:1;if(g0&&g1){const l0=ballsOn(S.T,b=>b.kind===g0).length,l1=ballsOn(S.T,b=>b.kind===g1).length;if(l0!==l1)w=l0<l1?0:1;}}
     return w===null?null:{order:[ids[w],ids[1-w]],draw:false};}
-  if(m.game==='carrom'){if(!over)return null;const S=CARROM,w=S.sc[0]!==S.sc[2]?(S.sc[0]>S.sc[2]?0:1):(m.rng()<.5?0:1);return{order:[ids[w],ids[1-w]],draw:false};}
+  if(m.game==='carrom'){if(!over&&!CARROM.over)return null;const S=CARROM,w=S.sc[0]!==S.sc[2]?(S.sc[0]>S.sc[2]?0:1):(m.rng()<.5?0:1);return{order:[ids[w],ids[1-w]],draw:false};}
   const sim=m.sim;if(!sim.done&&!over)return null;if(!sim.done&&m.game==='chess')sim.forceEnd();
   return{order:sim.order().map(i=>ids[i]),draw:!!sim.draw};}
-function updMHud(m){const left=Math.max(0,Math.ceil(m.limit-simElapsed(m))),mm=Math.floor(left/60),ss=String(left%60).padStart(2,'0');
+function updMHud(m){const el=Math.floor(simElapsed(m)),mm=Math.floor(el/60),ss=String(el%60).padStart(2,'0');
   byId('mhM').textContent=m.game==='pool'?(POOL.msg||''):m.game==='carrom'?('স্কোর: '+shortName(m.pnames[0])+' '+bnN(CARROM.sc[0])+' · '+shortName(m.pnames[1])+' '+bnN(CARROM.sc[2])):(m.msg||'');
-  byId('mhC').textContent='বাকি '+bnd(mm)+':'+bnd(ss);}
+  byId('mhC').textContent='সময় '+bnd(mm)+':'+bnd(ss);}
 function matchCam(dt){const m=MT,k=Math.min(1,dt*2.2);camera.position.lerp(m.camPos,k);m.look.lerp(m.camTo,k);camera.lookAt(m.look);}
 // the player's own steps while the game walks them somewhere (called from updateWalk)
 function autoStep(P,dt){const m=MT;if(!m||!m.auto)return[0,0];const tg=m.auto[0];if(!tg){m.auto=null;m.arrived=true;return[0,0];}
@@ -1632,6 +1734,7 @@ function matchUpdate(dt){const m=MT;if(!m)return;m.t+=dt;const U=player,O=m.opp&
       if(m.arrived&&all&&due)startPlay();break;}
     case'play':{matchCam(dt);m.hudT=(m.hudT||0)-dt;
       if(m.fixed)tableStep(m);else diningStep(m,dt);
+      talkTick(m);
       if(m.hudT<=0){m.hudT=.3;updMHud(m);}
       const r=simElapsed(m)>6?matchOutcome(m):null;
       if(r){m.state='result';m.t=0;m.hudT=0;updMHud(m);showResult(r);}break;}
@@ -1673,6 +1776,137 @@ function wireMatchUI(){
   byId('invYes').addEventListener('click',()=>answerInvite(true));byId('invNo').addEventListener('click',()=>answerInvite(false));
   byId('rOk').addEventListener('click',()=>endMatch(false));byId('rAgain').addEventListener('click',()=>endMatch(true));}
 
+/* ================= the bosses' rounds: CEO, HR and the manager walk around the office ================= */
+// Which boss walks where, and when, comes from the shared clock, so everybody sees the same boss in the same place.
+// If one corners the game room and asks "কাজ কাম নাই?", everyone in there bolts, and you have to run to your desk before you are caught.
+const BOSS_PERIOD=210,BOSS_SPEED=1.3,BOSS_RUN=3.5,BOSS_IDS=['ceo','hr','mgr'];
+const BOSSES={
+  ceo:{bn:'সিইও স্যার',em:'🎩',cut:10,origin:[-13.8,3.9],mk:()=>mkMan({style:'shirt',top:'#f4f4f2',bot:'#1e1f24',tie:'#7e2c3a',glasses:true,beard:false,mous:true,hs:'short',sleeve:'long',h:.93})},
+  hr:{bn:'এইচআর আপা',em:'📋',cut:7,origin:[16.4,4],mk:()=>mkWoman({top:'#2e5a8c',glasses:true,hs:'bun',sandal:false})},
+  mgr:{bn:'ম্যানেজার ভাই',em:'🧑‍💼',cut:5,origin:[1,-12.6],mk:()=>mkMan({style:'shirt',top:'#cfe0f2',bot:'#2a2f3a',tie:'#1f3b6e',glasses:false,beard:true,sleeve:'long'})}};
+const BS={plan:null,people:{},tags:{},cue:null,mark:null,chase:{on:false}};
+const CHASE=BS.chase;
+const LETTERS={
+  ceo:{title:'শো-কজ নোটিশ',body:'প্রতি: {name}\nবিষয়: কর্মঘণ্টায় গেমিং রুমে আড্ডা প্রসঙ্গে কারণ দর্শানো\n\nআপনাকে অফিস চলাকালীন গেমিং রুমে পাওয়া গেছে, অথচ আপনার ল্যাপটপে দুটো ট্যাব খোলা, কোনোটাতেই কাজ নেই। এই আচরণ কোম্পানির "আমরা একটা পরিবার" নীতির পরিপন্থী নয়, তবে সিইওর চা-ঠান্ডা-না-হওয়া নীতির পরিপন্থী।\n\nঅতএব, আপনি কেন চাকরিতে থাকবেন, তা ৩ কর্মদিবসের মধ্যে লিখিতভাবে জানান।',sign:'ইতি, সিইও (স্বাক্ষর: হিজিবিজি)'},
+  hr:{title:'সতর্কবার্তা',body:'প্রিয় {name},\n\nআমরা একটা পরিবার, আর পরিবারে কাজ ফাঁকি দেওয়া চলে না (ঈদের ছুটি ছাড়া)। আজ আপনাকে গেমিং রুমে পাওয়া গেছে। আপনি নিশ্চয়ই বলবেন, "ম্যাডাম, ব্রেন রিফ্রেশ করছিলাম।" আমরা বুঝি, কিন্তু রেকর্ডে তো কিছু লিখতে হবে।\n\nএই চিঠি আপনার ফাইলে সংরক্ষিত থাকবে, প্রোমোশনের সময় আবার দেখা হবে। 🙂',sign:'শুভকামনায়, এইচআর বিভাগ'},
+  mgr:{title:'ম্যানেজারের ব্যক্তিগত বার্তা',body:'{name},\n\nআমি কিছু বলছি না। শুধু বলছি, ডেডলাইন কাল ছিল, আর তুমি ক্যারম খেলছ। আমি রাগ করিনি, আমি শুধু হতাশ। এবং একটু রাগও।\n\nএবার থেকে ক্যারম খেলতে চাইলে আমাকে আগে বলবে, আমিও যাব।',sign:'—তোমার ম্যানেজার'}};
+
+function bossPerson(id){let P=BS.people[id];if(P)return P;
+  P=BOSSES[id].mk();P.root.visible=false;P.speed=BOSS_SPEED;BS.people[id]=P;
+  const el=document.createElement('div');el.className='bub on rtag boss';bubbleLayer().appendChild(el);BS.tags[id]=el;return P;}
+function bossCue(){if(BS.cue)return BS.cue;const g=new THREE.Group();
+  const sh=new THREE.Mesh(cylG(.0065,.012,1.0,10),mat('#d2ae72',.5));sh.rotation.x=Math.PI/2;sh.position.z=-.5;g.add(sh);
+  const bt=new THREE.Mesh(cylG(.012,.015,.45,10),mat('#2a1a10',.4));bt.rotation.x=Math.PI/2;bt.position.z=-1.225;g.add(bt);
+  g.visible=false;scene.add(g);return BS.cue=g;}
+// the ring on the floor that shows where your desk is
+function bossMark(){if(BS.mark)return BS.mark;const g=new THREE.Group(),m=new THREE.MeshBasicMaterial({color:0x2ecc59,transparent:true,opacity:.75});
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.55,.05,8,28),m);ring.rotation.x=Math.PI/2;ring.position.y=.06;g.add(ring);
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,3,20,1,true),new THREE.MeshBasicMaterial({color:0x2ecc59,transparent:true,opacity:.22,side:THREE.DoubleSide}));beam.position.y=1.5;g.add(beam);
+  g.visible=false;scene.add(g);return BS.mark=g;}
+
+/* ---- the plan for one round: who, where to, what they do there, all worked out from the slot number ---- */
+function pathLen(pts){const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));return cum;}
+function posOn(pts,cum,d){d=Math.max(0,Math.min(cum[cum.length-1],d));let i=1;while(i<pts.length-1&&cum[i]<d)i++;
+  const a=pts[i-1],b=pts[i],seg=cum[i]-cum[i-1]||1,u=(d-cum[i-1])/seg;return{x:a[0]+(b[0]-a[0])*u,z:a[1]+(b[1]-a[1])*u,yaw:Math.atan2(b[0]-a[0],b[1]-a[1])};}
+function bossPlan(k){if(BS.plan&&BS.plan.k===k)return BS.plan;
+  const rng=mulberry32(k*104729+7),id=BOSS_IDS[k%3],b=BOSSES[id],r=rng();let kind='visit',dest='visit',spot,face;
+  if(r<.5){dest='game';const q=rng();kind=q<.5?'ask':q<.75?'watch':'play';
+    if(kind==='play'){spot=[2.6,3.55];face=[2.6,5];}else if(kind==='watch'){spot=[.6,4.1];face=[2.6,5];}else{spot=[.4,4.8];face=[-.5,5.2];}}
+  else{const z=r<.7?ZONES.find(q=>q.id==='work'):r<.8?ZONES.find(q=>q.id==='bal'):r<.9?ZONES.find(q=>q.id==='dine'):ZONES.find(q=>q.id==='lounge');spot=[z.c[0],z.c[1]];face=[z.c[0],z.c[1]+3];}
+  const o=nearFree(b.origin[0],b.origin[1]),d=nearFree(spot[0],spot[1]),pts=[o,...route(o[0],o[1],d[0],d[1])],cum=pathLen(pts),L=cum[cum.length-1],walkT=L/BOSS_SPEED;
+  const tStart=2,tArr=tStart+walkT,dwell=kind==='ask'?31:kind==='visit'?14:34;
+  return BS.plan={k,id,kind,dest,pts,cum,L,face,tStart,tArr,tAsk:tArr+3,tLeave:tArr+dwell,tEnd:tArr+dwell+walkT,fired:false,fleeOn:false};}
+
+/* ---- the people in the game room bolt when the boss shouts ---- */
+const fleeList=()=>(MT&&MT.state==='play')?[]:[...POOL.players,...CARROM.players,...CARROM.watchers];
+function bossFlee(off,plan){if(plan.kind!=='ask')return;
+  const active=off>=plan.tAsk&&off<plan.tLeave+2,list=fleeList();
+  if(!active){if(plan.fleeOn){plan.fleeOn=false;for(const P of list){P.root.visible=true;P.root.position.set(P.x,0,P.z);P.root.rotation.y=P.yaw;P.fl=null;}}return;}
+  if(!plan.fleeOn){plan.fleeOn=true;plan.late=off>plan.tAsk+7;
+    list.forEach(P=>{if(plan.late){P.fl=null;return;}const pts=[[P.x,P.z],...route(P.x,P.z,.3,-4.5)];P.fl={pts,cum:pathLen(pts)};});}
+  list.forEach((P,i)=>{if(plan.late){P.root.visible=false;return;}const f=P.fl;if(!f)return;
+    const d=(off-plan.tAsk-.3-i*.15)*3.4,L=f.cum[f.cum.length-1];if(d<=0)return;
+    if(d>=L){P.root.visible=false;return;}
+    const q=posOn(f.pts,f.cum,d);P.root.visible=true;P.root.position.set(q.x,0,q.z);P.root.rotation.y=q.yaw;rest(P);walkPose(P,d*1.9,1);P.J.spine.rotation.x=.22;});}
+
+/* ---- walking, standing and doing their thing ---- */
+function bossStand(P,plan,off,t){rest(P);const J=P.J,fx=plan.face[0]-P.x,fz=plan.face[1]-P.z;P.yaw=Math.atan2(fx,fz);P.root.rotation.y=P.yaw;
+  if(plan.kind==='ask'){
+    if(off>=plan.tAsk&&off<plan.tAsk+3.5){J.rSh.rotation.set(-2.5,0,-.3);J.rEl.rotation.x=-.3;J.lSh.rotation.set(-.3,0,.7);J.neck.rotation.x=-.12;talk(P,t,true);}
+    else{J.lSh.rotation.set(-.35,0,.45);J.lEl.rotation.x=-1.6;J.rSh.rotation.set(-.35,0,-.45);J.rEl.rotation.x=-1.6;J.neck.rotation.y=Math.sin(t*.6)*.5;}}   // hands on hips, glaring
+  else if(plan.kind==='watch'){J.lSh.rotation.set(-.6,0,.5);J.lEl.rotation.x=-1.9;J.rSh.rotation.set(-.6,0,-.5);J.rEl.rotation.x=-1.9;J.neck.rotation.y=Math.sin(t*.4)*.35;}   // arms folded, watching
+  else if(plan.kind==='play'){const cue=bossCue(),c=(t*.5)%1,back=.04+.11*(.5-.5*Math.cos(Math.min(1,c*1.6)*Math.PI*2)),k=Math.min(1,c*4,(1-c)*4+.2);
+    poolPose(P,back,Math.min(1,k));P.root.updateMatrixWorld(true);J.rHand.getWorldPosition(_v);
+    const fx0=Math.sin(P.yaw),fz0=Math.cos(P.yaw);cue.visible=true;cue.position.set(_v.x+fx0*.3,_v.y-.02,_v.z+fz0*.3);cue.lookAt(_v.x+fx0,_v.y-.1,_v.z+fz0);}
+  else J.neck.rotation.y=Math.sin(t*.5)*.6;}
+function bossShape(plan,off,t){   // where the boss is right now on the round, or null when they are not out
+  if(off<plan.tStart||off>plan.tEnd)return null;
+  if(off<plan.tArr){const d=(off-plan.tStart)*BOSS_SPEED,q=posOn(plan.pts,plan.cum,d);return{x:q.x,z:q.z,yaw:q.yaw,walk:d};}
+  if(off<plan.tLeave){const q=plan.pts[plan.pts.length-1];return{x:q[0],z:q[1],stand:true};}
+  const d=plan.L-(off-plan.tLeave)*BOSS_SPEED,q=posOn(plan.pts,plan.cum,d),e=posOn(plan.pts,plan.cum,Math.max(0,d-.3));return{x:q.x,z:q.z,yaw:Math.atan2(e.x-q.x,e.z-q.z),walk:d};}
+function bossTag(id,P,show,html){const el=BS.tags[id];if(!el)return;
+  if(!show){el.style.visibility='hidden';return;}
+  P.J.neck.getWorldPosition(_v);_v.y+=.3;const dist=camera.position.distanceTo(_v);_v.project(camera);
+  if(dist>(mode==='walk'?22:60)||_v.z>1||_v.z<-1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){el.style.visibility='hidden';return;}
+  if(el.dataset.h!==html){el.dataset.h=html;el.innerHTML=html;}
+  el.style.visibility='';const w=stage.clientWidth,h=stage.clientHeight,bw=el.offsetWidth,x=Math.max(bw/2+6,Math.min(w-bw/2-6,(_v.x*.5+.5)*w)),y=(-_v.y*.5+.5)*h;
+  el.style.transform='translate('+x+'px,'+y+'px) translate(-50%,-100%)';}
+function bossUpdate(t,dt){
+  if(!PROFILE)return;
+  const w=worldT(),k=Math.floor(w/BOSS_PERIOD),off=w-k*BOSS_PERIOD,plan=bossPlan(k);
+  for(const id of BOSS_IDS){if(id!==plan.id&&BS.people[id]){BS.people[id].root.visible=false;BS.tags[id].style.visibility='hidden';}}
+  const P=bossPerson(plan.id),B=BOSSES[plan.id];
+  if(BS.cue)BS.cue.visible=false;
+  bossFlee(off,plan);
+  if(CHASE.on&&CHASE.slot===k){chaseUpdate(P,plan,dt,t);return;}
+  const st=bossShape(plan,off);
+  if(!st){P.root.visible=false;if(BS.cue)BS.cue.visible=false;bossTag(plan.id,P,false);return;}
+  P.root.visible=true;
+  if(plan.kind==='ask'&&!plan.fired&&off>=plan.tAsk&&off<plan.tAsk+4){plan.fired=true;
+    sfx.play('fail');sfx.play('door');if(mode==='walk'&&lastZone==='game'&&!MT&&!CHASE.on)startChase(plan,k,P);}
+  if(off>plan.tAsk+4)plan.fired=true;
+  P.x=st.x;P.z=st.z;
+  if(st.stand){bossStand(P,plan,off,t);P.root.position.set(st.x,0,st.z);}
+  else{P.yaw=st.yaw;P.root.position.set(st.x,0,st.z);P.root.rotation.y=st.yaw;rest(P);walkPose(P,st.walk*3.4,1);if(BS.cue)BS.cue.visible=false;}
+  life(P,t,dt);
+  const shouting=plan.kind==='ask'&&off>=plan.tAsk&&off<plan.tAsk+3.5;
+  bossTag(plan.id,P,true,shouting?'<b class="shout">কাজ কাম নাই?! 😡</b>':'<b>'+B.em+' '+B.bn+'</b><small>'+(st.stand?(plan.kind==='play'?'খেলছেন':plan.kind==='watch'?'খেলা দেখছেন':'পরিদর্শনে'):'অফিস ঘুরছেন')+'</small>');}
+
+/* ---- the chase ---- */
+function myDeskSpot(){let h=0;for(const c of PROFILE.empId)h=(h*31+c.charCodeAt(0))>>>0;
+  const free=DESKS.filter(s=>!s.occ),s=free[h%free.length],f0=Math.sin(s[2]),f1=Math.cos(s[2]);return{seat:s,stand:nearFree(s[0]-f0*.9,s[1]-f1*.9)};}
+function startChase(plan,k,B){panel.classList.add('folded');syncFold();const d=myDeskSpot();
+  Object.assign(CHASE,{on:true,slot:k,boss:plan.id,t:0,desk:d,path:null,repath:0,wph:0,over:false});
+  B.root.visible=true;const m=bossMark();m.visible=true;m.position.set(d.stand[0],0,d.stand[1]);
+  keys.run=true;byId('bRun').setAttribute('aria-pressed','true');
+  byId('chase').hidden=false;toast(BOSSES[plan.id].bn+' জিজ্ঞেস করলেন "কাজ কাম নাই?" — দৌড় দিন, ডেস্কে যান!',4000);}
+function endChase(msg){CHASE.on=false;byId('chase').hidden=true;if(BS.mark)BS.mark.visible=false;keys.run=false;byId('bRun').setAttribute('aria-pressed','false');if(msg)toast(msg,4500);}
+function chaseUpdate(B,plan,dt,t){
+  CHASE.t+=dt;const U=player;if(BS.mark)BS.mark.position.y=Math.sin(t*4)*.05;
+  const dd=Math.hypot(U.x-CHASE.desk.stand[0],U.z-CHASE.desk.stand[1]);
+  byId('chaseD').textContent='ডেস্ক এখান থেকে '+bnd(Math.round(dd))+' মিটার · বস '+bnd(Math.round(Math.hypot(U.x-B.x,U.z-B.z)))+' মিটার পেছনে';
+  keys.run=true;
+  if(CHASE.t<2.2){turnTo(B,Math.atan2(U.x-B.x,U.z-B.z),dt);B.root.position.set(B.x,0,B.z);life(B,t,dt);}
+  else{CHASE.repath-=dt;if(CHASE.repath<=0||!CHASE.path||!CHASE.path.length){CHASE.repath=.35;CHASE.path=route(B.x,B.z,U.x,U.z);}
+    const tg=CHASE.path[0];if(tg){const dx=tg[0]-B.x,dz=tg[1]-B.z,d=Math.hypot(dx,dz),s=BOSS_RUN*dt;
+      if(d<=s){B.x=tg[0];B.z=tg[1];CHASE.path.shift();}else{B.x+=dx/d*s;B.z+=dz/d*s;}
+      let df=Math.atan2(dx,dz)-B.yaw;df=Math.atan2(Math.sin(df),Math.cos(df));B.yaw+=df*Math.min(1,dt*10);}
+    rest(B);CHASE.wph+=dt*BOSS_RUN*3.4;walkPose(B,CHASE.wph,1);B.J.spine.rotation.x=.25;B.root.position.set(B.x,0,B.z);B.root.rotation.y=B.yaw;life(B,t,dt);}
+  bossTag(plan.id,B,true,'<b class="shout">'+(CHASE.t<2.2?'কাজ কাম নাই?! 😡':'দাঁড়াও! 😠')+'</b>');
+  if(Math.hypot(U.x-B.x,U.z-B.z)<.8&&CHASE.t>2.2){CHASE.over=true;caught(plan.id);return;}
+  if(dd<1.1){endChase('বেঁচে গেলেন! ডেস্কে বসে এখন কাজের ভান করুন 😅');return;}
+  if(CHASE.t>45)endChase('বস হাল ছেড়ে দিলেন। এবারের মতো বেঁচে গেলেন!');}
+async function caught(id){const b=BOSSES[id],L=LETTERS[id],name=window.CB_PLAYER.name;endChase();sfx.play('fail');
+  byId('lTitle').textContent=L.title;byId('lBody').textContent=L.body.replace('{name}',name);byId('lSign').textContent=L.sign;
+  const cut=byId('lCut');cut.className='lcut';cut.textContent='এমপ্লয়মেন্ট রেটিং কাটা হচ্ছে…';byId('lOk').disabled=true;byId('mletter').hidden=false;
+  try{const r=await fetch('/api/warning',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({boss:id})}),d=await r.json().catch(()=>null);
+    if(!r.ok||!d||!d.ok)throw new Error(d&&d.error||'');
+    if(PROFILE)PROFILE.employment=d.employment;cut.className='lcut bad';cut.textContent='এমপ্লয়মেন্ট রেটিং '+bnd(d.before)+' → '+bnd(d.employment)+' (−'+bnd(d.delta)+')';}
+  catch(e){cut.textContent=(e&&e.message)||'রেটিং কাটা যায়নি, নেটওয়ার্ক দেখুন।';}
+  byId('lOk').disabled=false;}
+function wireBossUI(){byId('lOk').addEventListener('click',()=>{byId('mletter').hidden=true;});
+  const m=byId('mletter');m.addEventListener('keydown',e=>e.stopPropagation());m.addEventListener('keyup',e=>e.stopPropagation());}
+
 /* ================= multiplayer: who is online and what they are doing ================= */
 // Everyone's browser reports its position to /api/presence about twice a second and gets back everyone else who is online.
 // Colleagues in the office are drawn as characters you can see walking, sitting and playing; the rest just show a green dot.
@@ -1680,10 +1914,12 @@ const NET={on:false,busy:false,last:null,players:new Map(),remote:new Map(),time
 const zoneBn=id=>{const z=ZONES.find(q=>q.id===id);return z?z.bn:'';};
 function myState(){
   let act='',pose='stand';const walk=mode==='walk'&&player&&!!window.CB_PLAYER;
+  if(CHASE.on)act='🏃 বসের হাত থেকে ডেস্কে পালাচ্ছে!';
   const z=walk?zoneAt(player.x,player.z):null;
   if(MT){const g=GAMEDEF[MT.game];
     if(MT.state==='play'||MT.state==='result'){act=g.em+' '+g.bn+' খেলছে ('+MT.pnames.map(shortName).join(', ')+')';if(g.dine)pose='sit';}
     else act='🤝 '+shortName(MT.emp.name)+' কে '+g.bn+' খেলতে ডাকছে';}
+  else if(CHASE.on){}
   else if(!walk)act='👀 অফিস ঘুরে দেখছে';
   const x=walk?player.x:0,zz=walk?player.z:0,L=NET.last,walking=!!L&&Math.hypot(x-L.x,zz-L.z)>.03;
   return{x:+x.toFixed(2),z:+zz.toFixed(2),yaw:+(walk?player.yaw:0).toFixed(2),walking,inOffice:walk,pose,zone:z?z.id:'',act};}
@@ -1754,7 +1990,7 @@ function initProfile(emp){
   const paint=(el,a,c)=>{el.textContent=a;el.style.background=c;};
   const refresh=()=>{const p=PROFILE;paint(pbtn,p.avatar,p.avatarBg);paint($('pavBig'),p.avatar,p.avatarBg);
     $('ptitle').textContent=p.name;$('pnick').textContent=p.nickname?'“'+p.nickname+'”':'ডাকনাম এখনো দেননি';$('pbio').textContent=p.bio||'';$('pbio').hidden=!p.bio;
-    const rows=[['আইডি',p.empId],['XP',bnN(p.xp||0)+' · '+rankOf(p.xp||0)],['ইমেইল',p.email],['পদবী',p.designation],['ক্যারেক্টার',modelOf(p.gender,p.model).n],...['pool','carrom','uno','chess','ludo'].map(g=>['রেটিং · '+GAMEDEF[g].bn,'⭐ '+bnd((p.ratings&&p.ratings[g])||1000)]),['ডিপার্টমেন্ট',p.department],['ব্রাঞ্চ',p.branch],['প্রিয় নাশতা',p.snack],['ফোন',p.phone]].filter(r=>r[1]);
+    const rows=[['আইডি',p.empId],['XP',bnN(p.xp||0)+' · '+rankOf(p.xp||0)],['এমপ্লয়মেন্ট রেটিং',bnd(p.employment==null?100:p.employment)+'/১০০'],['ইমেইল',p.email],['পদবী',p.designation],['ক্যারেক্টার',modelOf(p.gender,p.model).n],...['pool','carrom','uno','chess','ludo'].map(g=>['রেটিং · '+GAMEDEF[g].bn,'⭐ '+bnd((p.ratings&&p.ratings[g])||1000)]),['ডিপার্টমেন্ট',p.department],['ব্রাঞ্চ',p.branch],['প্রিয় নাশতা',p.snack],['ফোন',p.phone]].filter(r=>r[1]);
     const dl=$('pdl');dl.textContent='';for(const [k,v] of rows){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=k;dd.textContent=v;dl.append(dt,dd);}};
   const open=()=>{modal.hidden=false;showView();};
   const close=()=>{modal.hidden=true;};
@@ -1789,15 +2025,15 @@ function start(){
   loading.hidden=true;initLogin();
   const reduce=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
   let last=performance.now(),tt=0;/*DBG*/
-  function frame(now){if(PAUSE3D){last=now;requestAnimationFrame(frame);return;}const dt=Math.min(.05,(now-last)/1000);last=now;tt+=dt;
+  function frame(now){if(PAUSE3D){last=now;requestAnimationFrame(frame);return;}const dt=Math.min(.05,(now-last)/1000);last=now;tt=worldT();
     for(const a of acts){a.fn(a.P,tt,dt);if(!a.P.noBlink)life(a.P,tt,dt);}
-    if(!(MT&&MT.state==='play'&&MT.game==='pool'))poolUpdate(tt,dt);if(!(MT&&MT.state==='play'&&MT.game==='carrom'))carromUpdate(tt,dt);for(const P of POOL.players)life(P,tt,dt);for(const P of CARROM.players)life(P,tt,dt);
-    if(!reduce){for(const f of fans)f.rotation.y+=dt*6;}
+    ambUpdate(tt);for(const P of POOL.players)life(P,tt,dt);for(const P of CARROM.players)life(P,tt,dt);
+    if(!reduce){for(const f of fans)f.rotation.y=(tt*6)%(Math.PI*2);}
     const onBal=mode==='walk'&&lastZone==='bal';
-    for(const v of traffic){const px0=v.g.position.x;v.g.position.x+=v.dir*v.speed*dt;if(onBal&&(px0-player.x)*(v.g.position.x-player.x)<0&&Math.abs(v.g.position.x-px0)<5)sfx.vehicle(Math.max(.3,Math.min(1,1.3-Math.abs(v.g.position.z-player.z)/22)),v.kind);if(v.g.position.x>58)v.g.position.x=-58;if(v.g.position.x<-58)v.g.position.x=58;}
+    for(const v of traffic){const px0=v.g.position.x,nx=((v.x0+v.dir*v.speed*tt+58)%116+116)%116-58;v.g.position.x=nx;if(onBal&&(px0-player.x)*(nx-player.x)<0&&Math.abs(nx-px0)<5)sfx.vehicle(Math.max(.3,Math.min(1,1.3-Math.abs(v.g.position.z-player.z)/22)),v.kind);}
     updSmoke(dt);gateUpdate(tt,dt);
     if(MT&&(MT.state==='play'||MT.state==='result')){}else if(mode==='walk')updateWalk(tt,dt);else{updFly(dt);controls.update();}
-    clockTick(dt);matchUpdate(dt);retUpdate(dt);remoteUpdate(dt,tt);
+    clockTick(dt);matchUpdate(dt);retUpdate(dt);remoteUpdate(dt,tt);bossUpdate(tt,dt);
     updateLabels();updateTalk(dt);renderer.render(scene,camera);requestAnimationFrame(frame);}
   updBoard();requestAnimationFrame(frame);
 }
