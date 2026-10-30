@@ -1,8 +1,8 @@
 // GET /api/profile -> the logged-in employee's profile
 // POST /api/profile { nickname, avatar, avatarBg, bio, snack, phone } -> saves the editable fields
-import { db } from './_lib/db';
-import { authedEmpId, json } from './_lib/auth';
-import { AVATARS, loadRatings, shape, type Row } from './_lib/profile';
+import { db } from './_lib/db.js';
+import { authedEmpId, json } from './_lib/auth.js';
+import { AVATARS, loadRatings, shape, type Row } from './_lib/profile.js';
 
 const clean = (v: unknown, max: number): string => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '');
 

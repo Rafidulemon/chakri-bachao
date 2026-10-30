@@ -1,7 +1,7 @@
 // GET /api/employees -> everyone you can invite to a game, with their ratings (needs login)
-import { db } from './_lib/db';
-import { authedEmpId, json } from './_lib/auth';
-import { loadRatings, ONLINE_SECONDS } from './_lib/profile';
+import { db } from './_lib/db.js';
+import { authedEmpId, json } from './_lib/auth.js';
+import { loadRatings, ONLINE_SECONDS } from './_lib/profile.js';
 
 export async function GET(req: Request): Promise<Response> {
   const id = authedEmpId(req);

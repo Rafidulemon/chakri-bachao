@@ -1,5 +1,5 @@
 // Live challenges: shared by /api/live and /api/presence
-import type { db } from './db';
+import type { db } from './db.js';
 
 type Sql = ReturnType<typeof db>;
 

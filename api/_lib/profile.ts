@@ -1,5 +1,5 @@
 // Shared by login, profile and employees endpoints
-import type { db } from './db';
+import type { db } from './db.js';
 
 export const AVATARS = ['🧑‍💻', '👩‍💻', '🥷', '🧙', '🦸', '🧞', '🧛', '🤖', '👽', '🐱', '🐵', '🦊', '🐼', '🐸', '🦁', '🐧', '🐯', '🐰', '🦄', '💩'];
 export const GAMES = ['pool', 'carrom', 'uno', 'chess', 'ludo'] as const;

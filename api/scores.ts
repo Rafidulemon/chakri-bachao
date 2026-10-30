@@ -1,6 +1,6 @@
 // POST /api/scores { role, score, title, survived }  (name comes from the login) -> saves one finished workday
-import { db } from './_lib/db';
-import { authedEmpId, json } from './_lib/auth';
+import { db } from './_lib/db.js';
+import { authedEmpId, json } from './_lib/auth.js';
 
 const ROLES = new Set(['se', 'qa', 'des', 'hr', 'peon', 'ceo']);
 

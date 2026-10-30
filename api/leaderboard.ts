@@ -1,6 +1,6 @@
 // GET /api/leaderboard?period=week|all  -> top 20 workdays ("Employee of the Month" wall)
-import { db } from './_lib/db';
-import { json } from './_lib/auth';
+import { db } from './_lib/db.js';
+import { json } from './_lib/auth.js';
 
 export async function GET(req: Request): Promise<Response> {
   const period = new URL(req.url).searchParams.get('period') === 'all' ? 'all' : 'week';

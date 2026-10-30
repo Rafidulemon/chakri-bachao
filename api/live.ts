@@ -1,8 +1,8 @@
 // POST /api/live  { action: 'create' | 'respond' | 'go' | 'cancel', ... }  live challenges between people who are online
-import { db } from './_lib/db';
-import { authedEmpId, json } from './_lib/auth';
-import { GAMES, ONLINE_SECONDS } from './_lib/profile';
-import { LIVE_MAX, WALK_SECONDS, loadLive, type LivePlayer } from './_lib/live';
+import { db } from './_lib/db.js';
+import { authedEmpId, json } from './_lib/auth.js';
+import { GAMES, ONLINE_SECONDS } from './_lib/profile.js';
+import { LIVE_MAX, WALK_SECONDS, loadLive, type LivePlayer } from './_lib/live.js';
 
 const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
 

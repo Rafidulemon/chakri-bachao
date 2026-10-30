@@ -1,9 +1,9 @@
 // POST /api/presence { x, z, yaw, walking, inOffice, pose, zone, act } -> saves where you are and returns everyone else who is online
 // POST /api/presence { leave: true } -> you are offline right away (otherwise you drop off after ONLINE_SECONDS of silence)
-import { db } from './_lib/db';
-import { authedEmpId, json } from './_lib/auth';
-import { ONLINE_SECONDS } from './_lib/profile';
-import { loadLive } from './_lib/live';
+import { db } from './_lib/db.js';
+import { authedEmpId, json } from './_lib/auth.js';
+import { ONLINE_SECONDS } from './_lib/profile.js';
+import { loadLive } from './_lib/live.js';
 
 const num = (v: unknown, lim: number): number => (typeof v === 'number' && isFinite(v) ? Math.max(-lim, Math.min(lim, v)) : 0);
 const txt = (v: unknown, max: number): string => (typeof v === 'string' ? v.slice(0, max) : '');

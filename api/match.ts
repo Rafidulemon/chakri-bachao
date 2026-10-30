@@ -1,8 +1,8 @@
 // POST /api/match { game, order: [empId, ...], draw? }
 // order lists everyone who played, best first. Records the match and moves your rating and XP.
-import { db } from './_lib/db';
-import { authedEmpId, json } from './_lib/auth';
-import { GAMES, loadRatings, type Game } from './_lib/profile';
+import { db } from './_lib/db.js';
+import { authedEmpId, json } from './_lib/auth.js';
+import { GAMES, loadRatings, type Game } from './_lib/profile.js';
 
 const COOLDOWN_SECONDS = 15;   // a match takes about a minute, so this stops XP being farmed with repeated posts
 const K = 32;

@@ -1,7 +1,7 @@
 // POST /api/login  { email, empId }  -> checks the employee list, sets a 90-day cookie
-import { db } from './_lib/db';
-import { authCookie, json, normId } from './_lib/auth';
-import { loadRatings, shape } from './_lib/profile';
+import { db } from './_lib/db.js';
+import { authCookie, json, normId } from './_lib/auth.js';
+import { loadRatings, shape } from './_lib/profile.js';
 
 const BAD = 'ইমেইল বা এমপ্লয়ি আইডি মেলেনি। এইচআর আপাকে জিজ্ঞেস করুন।';
 
