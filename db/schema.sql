@@ -112,3 +112,6 @@ create table if not exists warnings (
   delta      integer not null,
   created_at timestamptz not null default now()
 );
+
+-- the shared move log for turn-based live games (ludo, uno): every player's choices, in order
+alter table live_matches add column if not exists moves jsonb not null default '[]';

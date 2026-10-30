@@ -290,3 +290,17 @@ body:not(.en) .lbl small,body:not(.en) .seg button small,body:not(.en) .hud .whe
 @keyframes chasePulse{from{transform:translateX(-50%) scale(1)}to{transform:translateX(-50%) scale(1.04)}}
 .bub.boss b.shout{color:#c0392b;font-size:15px}
 .bub.boss{border-color:#8b1d12}
+
+/* ---------- playing ludo and uno for real ---------- */
+.turnui{position:fixed;z-index:24;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 74px);width:min(640px,calc(100% - 16px));background:var(--panel);color:var(--ink);border:1.5px solid var(--line);border-top:5px solid var(--tape);border-radius:12px;padding:8px 10px 10px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.turnui[hidden]{display:none}
+.tu-h{font-size:14.5px;text-align:center;margin-bottom:6px}.tu-h b{font-size:20px}.tu-h span{color:var(--tape);font-weight:700;margin-left:6px}
+.tu-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin-top:6px}
+.tu-b{font:inherit;font-weight:700;font-size:14px;padding:8px 12px;border-radius:9px;border:1.5px solid var(--ink);background:var(--ink);color:var(--panel);cursor:pointer}
+.tu-hand{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 6px;justify-content:safe center}
+.ucard{flex:none;width:46px;height:68px;border-radius:8px;border:3px solid #fffdf7;color:#fff;font:700 20px/1 inherit;font-family:inherit;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.35);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.ucard.wild{border-image:linear-gradient(135deg,#d32f2f,#f2c230,#2e9d4a,#1f5fbf) 1}
+.ucard:disabled{opacity:.38;cursor:default;transform:translateY(5px)}
+.ucard:not(:disabled):hover{transform:translateY(-6px)}
+.ucol{font:inherit;font-weight:700;font-size:13px;color:#fff;border:2px solid #fffdf7;border-radius:8px;padding:6px 10px;cursor:pointer}
+@media (max-width:640px){.turnui{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}.ucard{width:40px;height:60px;font-size:17px}}

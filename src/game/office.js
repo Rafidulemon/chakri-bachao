@@ -1401,7 +1401,7 @@ async function goLive(m){if(m.state!=='waitLive')return;m.state='going';
   if(m.waitTip)rmTip(m.waitTip);m.waitTip=null;NET.skew=r.d.serverNow-Date.now();m.live=true;enterGo(m,r.d.live);}
 // everyone agreed (or the game was made up of simulated colleagues): everybody walks to their seats
 function enterGo(m,info){
-  const me=PROFILE.empId;m.ids=info.order;m.meIdx=m.ids.indexOf(me);m.seed=info.seed;m.startAt=info.startAtMs;m.table=info.table;m.liveId=info.id;
+  const me=PROFILE.empId;m.ids=info.order;m.meIdx=m.ids.indexOf(me);m.seed=info.seed;m.startAt=info.startAtMs;m.table=info.table;m.liveId=info.id;m.simIds=info.simIds||[];m.moves=(info.moves||[]).slice();
   m.pinfo={};for(const p of info.parts)m.pinfo[p.empId]=p;
   m.emps=m.ids.filter(i=>i!==me).map(i=>m.pinfo[i]);m.emp=m.emps[0];
   m.seats=GAMEDEF[m.game].dine?diningSeats(DTABLES[m.table],m.ids.length):null;
@@ -1430,6 +1430,7 @@ function startFromGo(L){if(MT){return;}panel.classList.add('folded');syncFold();
 function applyLive(list,serverNow){const me=PROFILE&&PROFILE.empId;if(!me)return;NET.skew=serverNow-Date.now();
   for(const L of list){const mine=L.hostId===me;
     if(mine&&MT&&MT.liveId===L.id)MT.liveInfo=L;
+    if(MT&&MT.liveId===L.id&&L.moves){if(!MT.moves)MT.moves=[];if(L.moves.length>MT.moves.length)MT.moves=L.moves.slice();}
     if(!mine&&L.status==='invite'){const p=L.players.find(x=>x.id===me);
       if(p&&p.state==='invited'&&!NET.handled.has('i'+L.id)){NET.handled.add('i'+L.id);
         if(MT)livePost({action:'respond',id:L.id,accept:false});else showInvite(L);}}
@@ -1544,11 +1545,16 @@ function makeLudoViz(m,c){const grp=new THREE.Group(),SIZE=.56,CELL=SIZE/15,sim=
   const layout=()=>{const cnt={};for(let pl=0;pl<n;pl++)for(let t=0;t<4;t++){const p=sim.tok[pl][t],cell=ludoCell(sim.corner[pl],p,t),key=p<0?'b'+pl+t:cell[0].toFixed(1)+','+cell[1].toFixed(1),k=cnt[key]=(cnt[key]||0)+1,[x,z]=pos(cell[0],cell[1]);
       const o=toks[pl][t];o.tx=x+(k-1)*.006;o.tz=z-(k-1)*.006;o.ty=.003+(k-1)*.004;}};
   layout();for(const row of toks)for(const o of row){o.g.position.set(o.tx,o.ty,o.tz);}
-  const focus=new THREE.Vector3();
+  const focus=new THREE.Vector3();let sel=[],selPl=0;
   return{grp,focus,
     onEvent(ev){if(!ev)return;die.material.map.dispose();die.material.map=dieTex(ev.roll);die.material.needsUpdate=true;layout();
       grp.updateMatrixWorld(true);if(ev.moved){const o=toks[ev.pl][ev.t];focus.set(o.tx,.01,o.tz).applyMatrix4(grp.matrixWorld);}else focus.set(0,.01,SIZE/2+.045).applyMatrix4(grp.matrixWorld);},
-    update(dt){grp.updateMatrixWorld(true);for(const row of toks)for(const o of row){const p=o.g.position,k=Math.min(1,dt*14);p.x+=(o.tx-p.x)*k;p.z+=(o.tz-p.z)*k;p.y+=(o.ty-p.y)*k;}},
+    setSelectable(pl,list){selPl=pl;sel=list.slice();},
+    pick(cx,cy){if(!sel.length)return-1;const r=renderer.domElement.getBoundingClientRect(),rc=new THREE.Raycaster();rc.setFromCamera(new THREE.Vector2(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1),camera);
+      const meshes=[];for(const t of sel)toks[selPl][t].g.traverse(o=>{if(o.isMesh)meshes.push(o);});const hit=rc.intersectObjects(meshes,false)[0];if(!hit)return-1;
+      for(const t of sel){let ok=false;toks[selPl][t].g.traverse(o=>{if(o===hit.object)ok=true;});if(ok)return t;}return-1;},
+    update(dt){grp.updateMatrixWorld(true);for(const row of toks)for(const o of row){const p=o.g.position,k=Math.min(1,dt*14);p.x+=(o.tx-p.x)*k;p.z+=(o.tz-p.z)*k;p.y+=(o.ty-p.y)*k;}
+      const k=performance.now()/1000;for(let pl=0;pl<n;pl++)for(let t=0;t<4;t++)toks[pl][t].g.scale.setScalar(pl===selPl&&sel.includes(t)?1+.25*Math.sin(k*9):1);},
     dispose(){disposeGroup(grp);}};}
 
 const UCOLS={R:'#d32f2f',Y:'#f2c230',G:'#2e9d4a',B:'#1f5fbf',W:'#222222'};
@@ -1658,18 +1664,74 @@ function tableTalk(m){const nm=m.pnames.map(shortName);
     if(sc[0]>prev[0])banter(m,0,'pot',1);else if(sc[2]>prev[2])banter(m,1,'pot',0);
     m.lastSc=sc.slice();}
   if(m.simN%900===0&&m.simN>0)banter(m,Math.floor(m.talkRng()*2),'idle',null,undefined,.7);}
+/* ---- ludo and uno are played for real: you choose your own tokens and cards ---- */
+// The engines hold the whole game; every choice anyone makes goes into one shared move log (m.moves, kept on the server for live games),
+// and each screen replays that log, so everyone sees the same game. Anyone who isn't a real player (a simulated colleague) is played by the computer.
+const TURN_SECS=20;
+function assistIdx(m,exclude){const l=m.humans.map((h,i)=>h&&i!==exclude&&(i===m.meIdx||NET.players.has(m.ids[i]))?i:-1).filter(i=>i>=0);return l.length?l[0]:-1;}
+async function postMove(m,a,p){
+  if(!m.liveId){m.moves.push(Object.assign({p},a));return;}
+  const seq=m.moves.length,r=await livePost({action:'move',id:m.liveId,seq,p,a});
+  if(MT!==m)return;
+  if(r.ok&&r.d&&r.d.entry){if(m.moves.length===seq)m.moves.push(r.d.entry);}
+  else if(r.d&&r.d.stale)sendPresence();}   // somebody else's copy of this move got there first: the next beat brings the log up to date
+function chooseToken(m,t){if(!m.waitingMine)return;m.waitingMine=false;turnUI(m,null);postMove(m,{t},m.meIdx);}
+function playCard(m,i,col){if(!m.waitingMine)return;m.waitingMine=false;m.wildPick=null;postMove(m,col?{c:i,col}:{c:i},m.meIdx);}
+function drawCard(m){if(!m.waitingMine)return;m.waitingMine=false;postMove(m,{draw:1},m.meIdx);}
+function turnUI(m,w){const box=byId('turnui'),me=m.meIdx,mine=!!w&&w.player===me;
+  if(m.game==='uno'){renderHand(m,w,mine);return;}
+  box.textContent='';m.waitingMine=mine;
+  if(m.viz&&m.viz.setSelectable)m.viz.setSelectable(me,mine?w.tokens:[]);
+  if(!mine){box.hidden=true;return;}
+  box.hidden=false;box.className='turnui';
+  const h=document.createElement('div');h.className='tu-h';h.innerHTML='🎲 <b>'+bnd(w.roll)+'</b> উঠেছে, কোন গুটি চালবেন? <span id="turnT"></span>';box.appendChild(h);
+  const row=document.createElement('div');row.className='tu-row';const seen=new Set();
+  for(const t of w.tokens){const p=m.sim.tok[me][t];if(seen.has(p))continue;seen.add(p);
+    const b=document.createElement('button');b.type='button';b.className='tu-b';
+    b.textContent=p<0?'ঘর থেকে বের করুন':(p+w.roll>=56?'ঘরে পৌঁছান 🏠':'গুটি: '+bnd(p+1)+' ধাপে → '+bnd(p+1+w.roll));
+    b.addEventListener('click',()=>chooseToken(m,t));row.appendChild(b);}
+  box.appendChild(row);}
+function renderHand(m,w,mine){const box=byId('turnui'),sim=m.sim,hand=sim.hands[m.meIdx];m.waitingMine=mine;
+  box.textContent='';box.hidden=false;box.className='turnui uno';
+  const h=document.createElement('div');h.className='tu-h';h.innerHTML=(mine?'🃏 <b>আপনার পালা!</b> একটা কার্ড বেছে নিন':'🃏 আপনার কার্ড ('+bnd(hand.length)+'টা)')+' <span id="turnT"></span>';box.appendChild(h);
+  const row=document.createElement('div');row.className='tu-hand';
+  hand.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.className='ucard'+(c.c==='W'?' wild':'');b.style.background=UCOLS[c.c];
+    b.textContent=USYM[c.v]||c.v;const ok=mine&&w.playable.includes(i);b.disabled=!ok;
+    b.addEventListener('click',()=>{if(c.c==='W'){m.wildPick=i;renderHand(m,w,mine);}else playCard(m,i);});row.appendChild(b);});
+  box.appendChild(row);
+  if(mine&&m.wildPick!=null){const ch=document.createElement('div');ch.className='tu-row';const l=document.createElement('span');l.textContent='কোন রং? ';ch.appendChild(l);
+    for(const col of['R','Y','G','B']){const b=document.createElement('button');b.type='button';b.className='ucol';b.style.background=UCOLS[col];b.textContent=UNO_NAMES[col];b.addEventListener('click',()=>playCard(m,m.wildPick,col));ch.appendChild(b);}box.appendChild(ch);}
+  if(mine&&!w.playable.length){const d=document.createElement('button');d.type='button';d.className='tu-b';d.textContent='খেলার মতো কার্ড নেই, একটা তুলুন';d.addEventListener('click',()=>drawCard(m));box.appendChild(d);}}
+function turnStep(m,dt){const sim=m.sim,now=performance.now();m.viz.update(dt);
+  if(!sim.done&&sim.steps>(m.game==='ludo'?3500:800))sim.forceEnd();   // failsafe so a game can never run forever
+  if(!sim.done&&now>=m.nextAt){
+    const ev=sim.step(m.moves);
+    if(ev){m.simN++;m.waitSince=null;m.autoFor=-1;m.wildPick=null;
+      m.nextAt=now+(m.game==='ludo'?(ev.phase==='roll'?(ev.pass?950:700):550):900);
+      m.active=ev.pl;m.reachT=.5;m.viz.onEvent(ev);m.msg=shortName(m.pnames[ev.pl])+' · '+ev.msg;m.watching=true;diningTalk(m,ev);sfx.play(m.game==='ludo'&&ev.phase==='roll'?'click':'pop',.25);
+      turnUI(m,null);}
+    else if(sim.waiting){const w=sim.waiting;
+      if(m.waitSince==null){m.waitSince=now;m.wildPick=null;turnUI(m,w);}
+      const mine=w.player===m.meIdx,idle=(now-m.waitSince)/1000;
+      m.msg=mine?'আপনার পালা!':shortName(m.pnames[w.player])+' এর পালা…';
+      const te=byId('turnT');if(te)te.textContent='⏱ '+bnd(Math.max(0,Math.ceil(TURN_SECS-idle)));
+      // a player who takes too long is played by the computer; if they left the game, the first player still here does it for them
+      if(m.autoFor!==m.moves.length&&((mine&&idle>TURN_SECS)||(!mine&&assistIdx(m,w.player)===m.meIdx&&idle>TURN_SECS+6))){m.autoFor=m.moves.length;postMove(m,{auto:1},w.player);}}}
+  m.reachT=Math.max(0,m.reachT-dt);const t=performance.now()/1000;
+  m.parts.forEach((P,i)=>{seatedPose(P,t,i===m.active&&m.reachT>0?Math.min(1,m.reachT/.25):0,m.viz.focus);});}
 function beginDining(m){const n=m.ids.length,t=DTABLES[m.table],seats=m.seats,parts=m.parts,c=n===2?{x:t.x,z:t.z-.3}:{x:t.x,z:t.z};
   parts.forEach((P,i)=>{P.path=[];place(P,seats[i].x,seats[i].z,seats[i].yaw);P.speed=1.05;});
   const rng=mulberry32(m.seed);
   if(m.game==='chess'){const w=rng()<.5?0:1;m.sim=createChess(w,1-w,[.55,.55],rng);m.viz=makeChessViz(m,c);m.stepDt=.25;m.limit=400;}
-  else if(m.game==='ludo'){m.sim=createLudo(n,rng);m.viz=makeLudoViz(m,c);m.stepDt=n===2?.14:n===3?.1:.08;m.limit=400;}
-  else{m.sim=createUno(n,rng);m.viz=makeUnoViz(m,c);m.stepDt=.6;m.limit=300;}
+  else{const humans=m.ids.map((id,i)=>i===m.meIdx||(m.live&&!(m.simIds||[]).includes(id)));   // real players choose their own moves
+    if(m.game==='ludo'){m.sim=createLudo(n,rng,humans);m.viz=makeLudoViz(m,c);}else{m.sim=createUno(n,rng,humans);m.viz=makeUnoViz(m,c);}
+    Object.assign(m,{turnGame:true,humans,stepDt:.6,limit:1e5,moves:m.moves||[],nextAt:0,waitSince:null,wallStart:performance.now(),autoFor:-1,waitingMine:false});}
   m.active=0;m.reachT=0;m.msg='খেলা শুরু!';const chessy=m.game==='chess';
   m.camPos=new THREE.Vector3(t.x+.1,chessy?2.15:2.75,t.z+(chessy?.8:1.3));m.camTo=new THREE.Vector3(c.x,.75,c.z);}
 function endDining(m){if(m.viz)m.viz.dispose();m.viz=null;}
 // the match clock: every screen derives the same step number from the shared start time, so everyone sees the same game
-function simElapsed(m){return m.fixed?m.simN/60:m.simN*(m.stepDt||0);}
-function diningStep(m,dt){const sim=m.sim,target=Math.min(Math.floor(m.limit/m.stepDt),Math.floor((nowMs(m)-m.startAt)/(m.stepDt*1000)));
+function simElapsed(m){if(m.turnGame)return(performance.now()-m.wallStart)/1000;return m.fixed?m.simN/60:m.simN*(m.stepDt||0);}
+function diningStep(m,dt){if(m.turnGame)return turnStep(m,dt);const sim=m.sim,target=Math.min(Math.floor(m.limit/m.stepDt),Math.floor((nowMs(m)-m.startAt)/(m.stepDt*1000)));
   while(m.simN<target&&!sim.done){m.simN++;const ev=sim.step();if(!ev)break;
     m.active=m.game==='chess'?(ev.side!=null?sim.who[ev.side]:m.active):ev.pl;m.reachT=m.stepDt*.9;m.viz.onEvent(ev);
     m.msg=m.game==='chess'?sim.msg:shortName(m.pnames[ev.pl])+' · '+ev.msg;
@@ -1740,7 +1802,7 @@ function matchUpdate(dt){const m=MT;if(!m)return;m.t+=dt;const U=player,O=m.opp&
       if(r){m.state='result';m.t=0;m.hudT=0;updMHud(m);showResult(r);}break;}
     case'result':matchCam(dt);if(m.viz)m.viz.update(dt);break;}
   if(MT)updTips(dt);}
-async function showResult(r){const m=MT,me=PROFILE.empId,n=r.order.length,place=r.order.indexOf(me)+1,gd=GAMEDEF[m.game];byId('mhud').hidden=true;
+async function showResult(r){const m=MT,me=PROFILE.empId,n=r.order.length,place=r.order.indexOf(me)+1,gd=GAMEDEF[m.game];byId('mhud').hidden=true;byId('turnui').hidden=true;m.waitingMine=false;
   const medal=['🥇','🥈','🥉','🏅'],nm=id=>id===me?'আপনি':shortName((m.pinfo[id]||{}).name);
   const win=place===1&&!r.draw;
   byId('rBig').textContent=r.draw?'🤝':win?'🏆':n>2&&place<n?medal[place-1]:'😭';
@@ -1754,7 +1816,7 @@ async function showResult(r){const m=MT,me=PROFILE.empId,n=r.order.length,place=
     xp.textContent=gd.em+' '+gd.bn+' রেটিং '+bnd(d.rating.before)+' → '+bnd(d.rating.after)+' ('+(dl>=0?'+':'−')+bnd(Math.abs(dl))+') · XP '+(d.xpDelta>=0?'+':'−')+bnd(Math.abs(d.xpDelta))+' · মোট '+bnd(d.xp);}
   catch(e){xp.textContent=(e&&e.message)||'রেটিং সেভ হয়নি। নেটওয়ার্ক দেখুন।';}
   byId('rAgain').disabled=false;byId('rOk').disabled=false;}
-function endMatch(again){const m=MT;if(!m)return;if(PROFILE)setPlayerModel(PROFILE.gender,PROFILE.model);byId('mres').hidden=true;byId('mhud').hidden=true;for(const t of m.tips.slice())rmTip(t);
+function endMatch(again){const m=MT;if(!m)return;if(PROFILE)setPlayerModel(PROFILE.gender,PROFILE.model);byId('mres').hidden=true;byId('mhud').hidden=true;byId('turnui').hidden=true;for(const t of m.tips.slice())rmTip(t);
   const dine=GAMEDEF[m.game].dine;
   if(m.game==='pool')endPool(m);else if(m.game==='carrom')endCarrom(m);else endDining(m);
   let tx,tz,f;
@@ -1774,6 +1836,7 @@ function wireMatchUI(){
   for(const id of['mpick','mres','minvite']){const el=byId(id);el.addEventListener('keydown',e=>e.stopPropagation());el.addEventListener('keyup',e=>e.stopPropagation());}
   addEventListener('keydown',e=>{if(e.key==='Escape'&&!byId('mpick').hidden){e.stopPropagation();closePick();}},true);
   byId('invYes').addEventListener('click',()=>answerInvite(true));byId('invNo').addEventListener('click',()=>answerInvite(false));
+  renderer.domElement.addEventListener('pointerdown',e=>{const m=MT;if(!m||m.state!=='play'||m.game!=='ludo'||!m.waitingMine||!m.viz)return;const t=m.viz.pick(e.clientX,e.clientY);if(t>=0)chooseToken(m,t);});
   byId('rOk').addEventListener('click',()=>endMatch(false));byId('rAgain').addEventListener('click',()=>endMatch(true));}
 
 /* ================= the bosses' rounds: CEO, HR and the manager walk around the office ================= */
@@ -1929,7 +1992,7 @@ async function sendPresence(){if(!NET.on||NET.busy)return;NET.busy=true;const s=
   catch(e){/* offline for a moment: the next beat tries again */}
   NET.busy=false;}
 function startNet(){if(NET.on)return;NET.on=true;byId('whoBtn').hidden=false;sendPresence();
-  const beat=()=>{sendPresence();setTimeout(beat,document.hidden?4000:600);};setTimeout(beat,600);
+  const beat=()=>{sendPresence();setTimeout(beat,document.hidden?4000:(MT&&MT.liveId&&MT.turnGame&&MT.state==='play'?300:600));};setTimeout(beat,600);
   addEventListener('pagehide',()=>{try{navigator.sendBeacon('/api/presence',new Blob([JSON.stringify({leave:true})],{type:'application/json'}));}catch(e){}});}
 function applyPlayers(list){
   NET.players=new Map(list.map(p=>[p.empId,p]));

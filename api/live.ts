@@ -34,7 +34,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const id = Number(b.id);
   if (!Number.isInteger(id)) return json({ ok: false, error: 'ভুল অনুরোধ।' }, 400);
-  const cur = await sql`select host_id, status, players, sim_ids from live_matches where id = ${id} and created_at > now() - interval '3 minutes'`;
+  const cur = await sql`select host_id, status, players, sim_ids, order_ids from live_matches where id = ${id} and created_at > now() - interval '3 minutes'`;
   const m = cur[0];
   if (!m) return json({ ok: false, error: 'এই চ্যালেঞ্জের সময় পেরিয়ে গেছে।' }, 404);
   const players = m.players as LivePlayer[];
@@ -45,6 +45,27 @@ export async function POST(req: Request): Promise<Response> {
     p.state = b.accept === true ? 'accepted' : 'declined';
     await sql`update live_matches set players = ${JSON.stringify(players)}::jsonb where id = ${id}`;
     return json({ ok: true });
+  }
+
+  if (b.action === 'move') {
+    // a choice in a turn-based game: it must be added at exactly the next position of the log, so two copies of the same move can't both land
+    const order = (m.order_ids as string[] | null) || [];
+    const p = Number(b.p), seq = Number(b.seq);
+    const a = b.a && typeof b.a === 'object' ? b.a : null;
+    if (m.status !== 'go' || !order.includes(me) || !a || !Number.isInteger(p) || p < 0 || p >= order.length || !Number.isInteger(seq) || seq < 0 || seq > 5000)
+      return json({ ok: false, error: 'ভুল অনুরোধ।' }, 400);
+    const auto = a.auto === 1;
+    if (!auto && order[p] !== me) return json({ ok: false, error: 'এটা আপনার চাল নয়।' }, 403);
+    const entry: Record<string, unknown> = { p };
+    if (Number.isInteger(a.t)) entry.t = a.t;
+    if (Number.isInteger(a.c)) entry.c = a.c;
+    if (typeof a.col === 'string' && /^[RYGB]$/.test(a.col)) entry.col = a.col;
+    if (a.draw === 1) entry.draw = 1;
+    if (auto) entry.auto = 1;
+    const rows = await sql`update live_matches set moves = moves || ${JSON.stringify([entry])}::jsonb
+      where id = ${id} and status = 'go' and jsonb_array_length(moves) = ${seq} returning jsonb_array_length(moves) as n`;
+    if (!rows[0]) return json({ ok: false, error: 'এই চাল আগেই পড়ে গেছে।', stale: true }, 409);
+    return json({ ok: true, n: Number(rows[0].n), entry });
   }
 
   if (m.host_id !== me) return json({ ok: false, error: 'শুধু যিনি ডেকেছেন তিনিই এটা করতে পারেন।' }, 403);

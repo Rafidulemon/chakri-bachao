@@ -10,7 +10,7 @@ export interface LivePlayer { id: string; state: 'invited' | 'accepted' | 'decli
 
 // every live match I am part of (as host or invited), newest few minutes only
 export async function loadLive(sql: Sql, me: string, onlyId?: number) {
-  const rows = await sql`select id, game, host_id, table_idx, status, players, sim_ids, order_ids, seed,
+  const rows = await sql`select id, game, host_id, table_idx, status, players, sim_ids, order_ids, seed, moves,
       (extract(epoch from start_at) * 1000)::float8 as start_ms
     from live_matches
     where created_at > now() - interval '3 minutes'
@@ -31,7 +31,7 @@ export async function loadLive(sql: Sql, me: string, onlyId?: number) {
   }));
   return rows.map(r => ({
     id: Number(r.id), game: r.game, hostId: r.host_id, table: Number(r.table_idx), status: r.status,
-    players: r.players, simIds: r.sim_ids, order: r.order_ids, seed: r.seed, startAtMs: r.start_ms,
+    players: r.players, simIds: r.sim_ids, order: r.order_ids, seed: r.seed, startAtMs: r.start_ms, moves: r.moves,
     parts,
   }));
 }

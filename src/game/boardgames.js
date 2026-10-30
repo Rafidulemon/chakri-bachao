@@ -140,62 +140,90 @@ export function createChess(whiteIdx = 0, blackIdx = 1, skill = [.55, .55], rng 
 // 51..55 in the home column, 56 = home.
 export const LUDO_COLORS = ['লাল', 'সবুজ', 'হলুদ', 'নীল'];
 const SAFE = a => a % 13 === 0 || a % 13 === 8;
-export function createLudo(n, rng = Math.random) {
+export function createLudo(n, rng = Math.random, human = []) {
   const rnd = k => Math.floor(rng() * k), pickOf = a => a[rnd(a.length)];
   const corner = n === 2 ? [0, 2] : n === 3 ? [0, 1, 2] : [0, 1, 2, 3];   // which board corner each participant uses
   const tok = corner.map(() => [-1, -1, -1, -1]);
-  const g = { n, corner, tok, turn: 0, sixes: 0, done: false, roll: 0, finished: [], steps: 0, last: null };
+  // human[i] = a real player decides participant i's moves (read from the move log); everyone else is played by the computer.
+  const g = { n, corner, tok, turn: 0, sixes: 0, done: false, roll: 0, finished: [], steps: 0, last: null, used: 0, waiting: null, pending: null };
   const abs = (pl, p) => (13 * corner[pl] + p) % 52;
   const progress = pl => tok[pl].reduce((s, p) => s + (p < 0 ? 0 : p + 1), 0);
   g.progress = progress;
-  g.step = () => {
-    if (g.done) return null;
-    g.steps++;
-    const pl = g.turn, roll = 1 + rnd(6);
-    g.roll = roll;
+  const options = (pl, roll) => {
     const opts = [];
     tok[pl].forEach((p, t) => {
       if (p === 56) return;
       if (p < 0) { if (roll === 6) opts.push({ t, np: 0 }); return; }
       if (p + roll <= 56) opts.push({ t, np: p + roll });
     });
-    let ev = { pl, roll, moved: false, msg: LUDO_COLORS[corner[pl]] + ' 🎲' + roll };
-    let extra = roll === 6;
-    if (opts.length) {
-      for (const o of opts) {
-        let s = rng() * 6 + o.np * .15;
-        if (o.np === 56) s += 100;
-        if (tok[pl][o.t] < 0) s += 40;
-        if (o.np <= 50) {
-          const a = abs(pl, o.np);
-          for (let q = 0; q < n; q++) if (q !== pl) for (const p of tok[q]) if (p >= 0 && p <= 50 && abs(q, p) === a && !SAFE(a)) s += 60;
-          if (SAFE(a)) s += 8;
-        }
-        o.s = s;
-      }
-      opts.sort((x, y) => y.s - x.s);
-      const o = rng() < .85 ? opts[0] : pickOf(opts);
-      const from = tok[pl][o.t];
-      tok[pl][o.t] = o.np;
-      const caught = [];
+    return opts;
+  };
+  // tokens standing on the same square are the same choice
+  const uniq = (pl, opts) => { const seen = new Set(), out = []; for (const o of opts) { const k = tok[pl][o.t]; if (!seen.has(k)) { seen.add(k); out.push(o); } } return out; };
+  const aiPick = (pl, opts) => {
+    for (const o of opts) {
+      let s = rng() * 6 + o.np * .15;
+      if (o.np === 56) s += 100;
+      if (tok[pl][o.t] < 0) s += 40;
       if (o.np <= 50) {
         const a = abs(pl, o.np);
-        if (!SAFE(a)) for (let q = 0; q < n; q++) if (q !== pl) tok[q].forEach((p, t) => { if (p >= 0 && p <= 50 && abs(q, p) === a) { tok[q][t] = -1; caught.push({ pl: q, t }); } });
+        for (let q = 0; q < n; q++) if (q !== pl) for (const p of tok[q]) if (p >= 0 && p <= 50 && abs(q, p) === a && !SAFE(a)) s += 60;
+        if (SAFE(a)) s += 8;
       }
-      ev = { pl, roll, moved: true, t: o.t, from, to: o.np, caught, msg: ev.msg + (from < 0 ? ', বের হল' : '') + (caught.length ? ', ঘুঁটি কাটল!' : '') + (o.np === 56 ? ', ঘরে পৌঁছল!' : '') };
-      if (caught.length || o.np === 56) extra = true;
-      if (tok[pl].every(p => p === 56)) {
-        g.finished.push(pl); extra = false;
-        ev.msg += ' ' + LUDO_COLORS[corner[pl]] + (g.finished.length === 1 ? ' জিতল!' : ' ' + ['', 'দ্বিতীয়', 'তৃতীয়'][g.finished.length - 1] + ' হল!');
-        if (g.finished.length >= n - 1) g.done = true;
-      }
+      o.s = s;
     }
+    const sorted = opts.slice().sort((x, y) => y.s - x.s);
+    return rng() < .85 ? sorted[0] : pickOf(sorted);
+  };
+  const endTurn = (roll, extra) => {
     if (extra) g.sixes = roll === 6 ? g.sixes + 1 : g.sixes; else g.sixes = 0;
     if (g.sixes >= 3) { extra = false; g.sixes = 0; }
     if (!extra && !g.done) { do { g.turn = (g.turn + 1) % n; } while (g.finished.includes(g.turn)); }
+  };
+  // One step is either a throw of the dice or the move that follows it. Returns null when it has to wait for a real player's choice
+  // (g.waiting says who and which tokens can move). `moves` is the shared move log; g.used counts how many of its entries have been read.
+  g.step = (moves = []) => {
+    if (g.done) return null;
+    const pl = g.turn;
+    if (!g.pending) {
+      g.steps++;
+      const roll = 1 + rnd(6), opts = options(pl, roll);
+      g.roll = roll;
+      const ev = { pl, roll, phase: 'roll', moved: false, msg: LUDO_COLORS[corner[pl]] + ' 🎲' + roll };
+      if (!opts.length) { ev.msg += ' (চাল নেই)'; ev.pass = true; endTurn(roll, roll === 6); } else g.pending = { roll, opts };
+      g.last = ev;
+      return ev;
+    }
+    const { roll, opts } = g.pending, u = uniq(pl, opts);
+    let o;
+    if (human[pl] && u.length > 1) {
+      const mv = moves[g.used];
+      if (!mv) { g.waiting = { player: pl, roll, tokens: opts.map(x => x.t) }; return null; }
+      g.used++;
+      const from = mv.p === pl && mv.t !== undefined ? tok[pl][mv.t] : undefined;
+      o = u.find(x => tok[pl][x.t] === from) || aiPick(pl, opts);   // a wrong or timed-out choice is played by the computer
+    } else o = u.length === 1 ? u[0] : aiPick(pl, opts);
+    g.waiting = null; g.pending = null; g.steps++;
+    let extra = roll === 6;
+    const from = tok[pl][o.t];
+    tok[pl][o.t] = o.np;
+    const caught = [];
+    if (o.np <= 50) {
+      const a = abs(pl, o.np);
+      if (!SAFE(a)) for (let q = 0; q < n; q++) if (q !== pl) tok[q].forEach((p, t) => { if (p >= 0 && p <= 50 && abs(q, p) === a) { tok[q][t] = -1; caught.push({ pl: q, t }); } });
+    }
+    const ev = { pl, roll, phase: 'move', moved: true, t: o.t, from, to: o.np, caught, msg: LUDO_COLORS[corner[pl]] + ' 🎲' + roll + (from < 0 ? ', বের হল' : '') + (caught.length ? ', ঘুঁটি কাটল!' : '') + (o.np === 56 ? ', ঘরে পৌঁছল!' : '') };
+    if (caught.length || o.np === 56) extra = true;
+    if (tok[pl].every(p => p === 56)) {
+      g.finished.push(pl); extra = false;
+      ev.msg += ' ' + LUDO_COLORS[corner[pl]] + (g.finished.length === 1 ? ' জিতল!' : ' ' + ['', 'দ্বিতীয়', 'তৃতীয়'][g.finished.length - 1] + ' হল!');
+      if (g.finished.length >= (human.some(Boolean) ? 1 : n - 1)) g.done = true;   // with real players the first one home wins; the rest are ranked by progress
+    }
+    endTurn(roll, extra);
     g.last = ev;
     return ev;
   };
+  g.forceEnd = () => { g.done = true; };
   // participants in finishing order: the winner first, the rest by how far they got
   g.order = () => {
     const rest = [...Array(n).keys()].filter(i => !g.finished.includes(i)).sort((a, b) => progress(b) - progress(a));
@@ -220,44 +248,63 @@ function unoDeck(rng) {
   for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; }
   return d;
 }
-export function createUno(n, rng = Math.random) {
+export function createUno(n, rng = Math.random, human = []) {
   const rnd = k => Math.floor(rng() * k), pickOf = a => a[rnd(a.length)];
   let deck = unoDeck(rng);
   const hands = Array.from({ length: n }, () => []);
   for (let r = 0; r < 7; r++) for (let p = 0; p < n; p++) hands[p].push(deck.pop());
   let top;
   do { top = deck.pop(); if (top.c === 'W') deck.unshift(top); } while (top.c === 'W');
-  const g = { n, hands, discard: [top], top, color: top.c, turn: 0, dir: 1, done: false, winner: -1, steps: 0, last: null };
+  const g = { n, hands, discard: [top], top, color: top.c, turn: 0, dir: 1, done: false, winner: -1, steps: 0, last: null, used: 0, waiting: null };
   const draw = pl => {
     if (!deck.length) { const keep = g.discard.pop(); deck = g.discard; g.discard = [keep]; for (let i = deck.length - 1; i > 0; i--) { const j = rnd(i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; } }
     if (!deck.length) return null;
     const c = deck.pop(); hands[pl].push(c); return c;
   };
   const playable = c => c.c === 'W' || c.c === g.color || (c.v === g.top.v && g.top.c !== 'W');
+  g.playable = playable;
   const next = (from, k = 1) => ((from + g.dir * k) % n + n) % n;
   const cardName = c => (c.c === 'W' ? (c.v === 'w4' ? 'ওয়াইল্ড +৪' : 'ওয়াইল্ড') : UNO_NAMES[c.c] + ' ' + ({ skip: 'স্কিপ', rev: 'রিভার্স', d2: '+২' }[c.v] || c.v));
   g.cardName = cardName;
-  g.step = () => {
+  // human[i] = a real player chooses participant i's cards (read from the shared move log: {p, c: card index, col} or {p, draw}).
+  // A timed-out or invalid entry is played by the computer. Returns null while waiting for a real player.
+  g.step = (moves = []) => {
     if (g.done) return null;
-    g.steps++;
     const pl = g.turn;
-    let drew = 0, c = hands[pl].filter(playable);
-    if (!c.length) { const d = draw(pl); drew = 1; if (d && playable(d)) c = [d]; }
+    let choice = null;
+    if (human[pl]) {
+      const mv = moves[g.used];
+      if (!mv) { g.waiting = { player: pl, playable: hands[pl].map((c, i) => (playable(c) ? i : -1)).filter(i => i >= 0) }; return null; }
+      g.used++;
+      if (mv.p === pl && mv.c !== undefined && hands[pl][mv.c] && playable(hands[pl][mv.c])) choice = { card: hands[pl][mv.c], col: mv.col };
+      else if (mv.p === pl && mv.draw && !hands[pl].some(playable)) choice = { draw: true };
+    }
+    g.waiting = null; g.steps++;
+    let drew = 0, c;
+    if (choice && choice.card) c = [choice.card];
+    else { c = hands[pl].filter(playable); if (!c.length) { const d = draw(pl); drew = 1; if (d && playable(d)) c = [d]; } }
     const ev = { pl, drew, card: null, msg: '' };
     if (!c.length) {
       ev.msg = 'তুলল ১টা কার্ড, খেলার মতো নেই';
       g.turn = next(pl);
     } else {
-      // prefer action cards a little, keep wilds for when nothing else fits
-      const nonWild = c.filter(x => x.c !== 'W');
-      const pool = nonWild.length ? nonWild : c;
-      const card = rng() < .35 ? pickOf(pool) : pool.slice().sort((a, b) => ((/\d/.test(b.v) ? 0 : 1) - (/\d/.test(a.v) ? 0 : 1)))[0];
+      let card;
+      if (choice && choice.card) card = choice.card;
+      else {
+        // the computer prefers action cards a little and keeps wilds for when nothing else fits
+        const nonWild = c.filter(x => x.c !== 'W');
+        const pool = nonWild.length ? nonWild : c;
+        card = rng() < .35 ? pickOf(pool) : pool.slice().sort((a, b) => ((/\d/.test(b.v) ? 0 : 1) - (/\d/.test(a.v) ? 0 : 1)))[0];
+      }
       hands[pl].splice(hands[pl].indexOf(card), 1);
       g.discard.push(card); g.top = card;
       if (card.c === 'W') {
-        const cnt = { R: 0, Y: 0, G: 0, B: 0 };
-        for (const x of hands[pl]) if (x.c !== 'W') cnt[x.c]++;
-        g.color = UCOL.slice().sort((a, b) => cnt[b] - cnt[a])[0];
+        if (choice && choice.col && UCOL.includes(choice.col)) g.color = choice.col;
+        else {
+          const cnt = { R: 0, Y: 0, G: 0, B: 0 };
+          for (const x of hands[pl]) if (x.c !== 'W') cnt[x.c]++;
+          g.color = UCOL.slice().sort((a, b) => cnt[b] - cnt[a])[0];
+        }
       } else g.color = card.c;
       ev.card = card;
       ev.msg = cardName(card) + (drew ? ' (তুলে খেলল)' : '') + (card.c === 'W' ? ' → ' + UNO_NAMES[g.color] : '');
@@ -274,6 +321,7 @@ export function createUno(n, rng = Math.random) {
     g.last = ev;
     return ev;
   };
+  g.forceEnd = () => { g.done = true; };
   g.order = () => {
     const idx = [...Array(n).keys()];
     return idx.sort((a, b) => (a === g.winner ? -1 : b === g.winner ? 1 : hands[a].length - hands[b].length));
