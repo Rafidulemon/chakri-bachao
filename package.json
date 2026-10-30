@@ -1,0 +1,29 @@
+{
+  "name": "chakri-bachao",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "চাকরি বাঁচাও: a funny 3D office survival game for the team",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "db:setup": "node db/setup.mjs",
+    "db:import": "node db/import-employees.mjs"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.21.0",
+    "@neondatabase/serverless": "^1.2.0",
+    "howler": "^2.2.4",
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.13",
+    "@types/node": "^26.6.6",
+    "dotenv": "^18.0.9",
+    "exceljs": "^4.4.0",
+    "typescript": "^7.0.2",
+    "vercel": "^65.8.0",
+    "vite": "^8.3.5"
+  }
+}
