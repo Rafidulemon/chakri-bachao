@@ -1,5 +1,6 @@
 // Live challenges: shared by /api/live and /api/presence
 import type { db } from './db.js';
+import { parseLook } from './profile.js';
 
 type Sql = ReturnType<typeof db>;
 
@@ -24,10 +25,10 @@ export async function loadLive(sql: Sql, me: string, onlyId?: number) {
     for (const p of r.players as LivePlayer[]) ids.add(p.id);
     for (const s of r.sim_ids as string[]) ids.add(s);
   }
-  const people = await sql`select emp_id, name, nickname, gender, model from employees where emp_id = any(${[...ids]})`;
+  const people = await sql`select emp_id, name, nickname, gender, model, look from employees where emp_id = any(${[...ids]})`;
   const parts = people.map(e => ({
     empId: e.emp_id, name: e.name, nickname: e.nickname || '',
-    gender: e.gender === 'female' ? 'f' : e.gender === 'male' ? 'm' : '', model: e.model == null ? 0 : Number(e.model),
+    gender: e.gender === 'female' ? 'f' : e.gender === 'male' ? 'm' : '', model: e.model == null ? 0 : Number(e.model), look: parseLook(e.look),
   }));
   return rows.map(r => ({
     id: Number(r.id), game: r.game, hostId: r.host_id, table: Number(r.table_idx), status: r.status,

@@ -54,13 +54,13 @@ function matD(c,r,ex){return mat(c,r,0,Object.assign({side:THREE.DoubleSide},ex|
 const UB=new THREE.BoxGeometry(1,1,1), US=new THREE.SphereGeometry(1,20,14), UC=new THREE.CylinderGeometry(1,1,1,20), UP=new THREE.PlaneGeometry(1,1);
 const staticG=new THREE.Group(), wallsG=new THREE.Group(), tallG=new THREE.Group();
 scene.add(staticG,wallsG,tallG);
-const colliders=[]; function addCol(a,b,c,d){colliders.push([a,b,c,d]);}
+const colliders=[]; function addCol(a,b,c,d,top){colliders.push([a,b,c,d,top===undefined?99:top]);}
 function M(m){return typeof m==='string'?mat(m):m;}
 function bx(p,w,h,d,x,y,z,m,o){o=o||{};const e=new THREE.Mesh(UB,M(m));e.scale.set(w,h,d);e.position.set(x,y+h/2,z);
   if(o.rx)e.rotation.x=o.rx;if(o.ry)e.rotation.y=o.ry;if(o.rz)e.rotation.z=o.rz;e.castShadow=o.cast!==false;e.receiveShadow=true;
-  (p||staticG).add(e);if(o.col)addCol(x-w/2,x+w/2,z-d/2,z+d/2);return e;}
+  (p||staticG).add(e);if(o.col)addCol(x-w/2,x+w/2,z-d/2,z+d/2,y+h);return e;}
 function cy(p,r,h,x,y,z,m,o){o=o||{};const e=new THREE.Mesh(UC,M(m));e.scale.set(r,h,r);e.position.set(x,y+h/2,z);
-  if(o.rx)e.rotation.x=o.rx;if(o.rz)e.rotation.z=o.rz;e.castShadow=o.cast!==false;e.receiveShadow=true;(p||staticG).add(e);if(o.col)addCol(x-r,x+r,z-r,z+r);return e;}
+  if(o.rx)e.rotation.x=o.rx;if(o.rz)e.rotation.z=o.rz;e.castShadow=o.cast!==false;e.receiveShadow=true;(p||staticG).add(e);if(o.col)addCol(x-r,x+r,z-r,z+r,y+h);return e;}
 function sp(p,rx,ry,rz,x,y,z,m,o){o=o||{};const e=new THREE.Mesh(US,M(m));e.scale.set(rx,ry,rz);e.position.set(x,y,z);e.castShadow=o.cast!==false;e.receiveShadow=true;(p||staticG).add(e);return e;}
 function grp(p,x,y,z,ry){const g=new THREE.Group();g.position.set(x,y,z);if(ry)g.rotation.y=ry;(p||staticG).add(g);return g;}
 function plane(p,w,h,x,y,z,m,ry,rx){const e=new THREE.Mesh(UP,M(m));e.scale.set(w,h,1);e.position.set(x,y,z);e.rotation.order='YXZ';e.rotation.y=ry||0;e.rotation.x=rx||0;e.castShadow=false;e.receiveShadow=true;(p||staticG).add(e);return e;}
@@ -393,7 +393,7 @@ function makePerson(o){
     else{pm(an,shoeGeo(),shoe,0,-.052,.045,1,1,1,true);pm(an,UB,mat('#2a2522',.7),0,-.0715,.045,.092,.012,.25);}}
   people.push(P);return P;
 }
-function place(P,x,z,yaw){P.x=x;P.z=z;P.yaw=yaw||0;P.root.position.set(x,0,z);P.root.rotation.y=P.yaw;}
+function place(P,x,z,yaw){P.x=x;P.z=z;P.y=0;P.vy=0;P.yaw=yaw||0;P.root.position.set(x,0,z);P.root.rotation.y=P.yaw;}
 function rest(P){const J=P.J;for(const n of JN)J[n].rotation.set(0,0,0);J.hips.rotation.set(0,0,0);J.hips.position.y=STAND;
   J.lSh.rotation.z=.07;J.rSh.rotation.z=-.07;J.lEl.rotation.x=-.1;J.rEl.rotation.x=-.1;J.mouth.scale.y=.0025;J.lids[0].rotation.x=J.lids[1].rotation.x=-.5;if(J.skirt)J.skirt.scale.y=1;}
 function sit(P,seat){const J=P.J,sl=seat/P.s;J.hips.position.y=sl+.1;const th=Math.asin(clamp((sl+.07-.4975)/.44,-.3,.8)),a=Math.PI/2-th;
@@ -443,7 +443,7 @@ function mkAny(e){return R()<.38?mkWoman(e):mkMan(e);}
 
 /* props */
 function addCig(P){const g=P.gp(P.J.rHand,0,-.085,0);const c=P.pm(g,cylG(.0042,.0042,.075,8),mat('#f4f1ea',.6),0,0,.03);c.rotation.x=Math.PI/2;
-  P.pm(g,cylG(.0045,.0045,.02,8),mat('#c98a3c',.6),0,0,-.005).rotation.x=Math.PI/2;P.cigTip=P.pm(g,US,new THREE.MeshBasicMaterial({color:lin('#ff6a2a')}),0,0,.068,.0048,.0048,.0048);}
+  P.pm(g,cylG(.0045,.0045,.02,8),mat('#c98a3c',.6),0,0,-.005).rotation.x=Math.PI/2;P.cigTip=P.pm(g,US,new THREE.MeshBasicMaterial({color:lin('#ff6a2a')}),0,0,.068,.0048,.0048,.0048);P.cigGroup=g;P.cigBody=c;}
 function addCup(P,hand){const g=P.gp(P.J[hand||'rHand'],0,-.09,.025);P.pm(g,cylG(.032,.025,.065,14),mat('#f7f5ef',.3),0,0,0);P.pm(g,cylG(.029,.029,.004,14),mat('#9a5a2b',.4),0,.026,0);}
 function addPhone(P,hand){const g=P.gp(P.J[hand||'rHand'],0,-.085,.03);const b=P.pm(g,UB,mat('#15161a',.3,.2),0,0,0,.07,.14,.009);P.pm(g,UB,new THREE.MeshBasicMaterial({color:lin('#8fb8e6')}),0,0,.005,.062,.128,.002);P.phone=g;}
 
@@ -786,7 +786,7 @@ function deskR(x,z,ry,role){const g=grp(staticG,x,0,z,ry);const fm=mat('#141518'
   bx(g,.22,.003,.2,-.3,.75,-.15,'#2a2c30',{cast:false});sp(g,.026,.013,.042,-.3,.76,-.15,'#1e1f22',{cast:false});
   if(R()<.5)cy(g,.04,.1,-.62,.75,.12,pick(MUG));
   oChair(0,-.86,0,null,g);
-  if(Math.abs(Math.sin(ry))>.5)addCol(x-.36,x+.36,z-.8,z+.8);else addCol(x-.8,x+.8,z-.36,z+.36);}
+  if(Math.abs(Math.sin(ry))>.5)addCol(x-.36,x+.36,z-.8,z+.8,.8);else addCol(x-.8,x+.8,z-.36,z+.36,.8);}   // desks are low enough to jump over or onto
 function dChair(x,z,ry){const g=grp(staticG,x,0,z,ry);const l=mat('#9a6a3e',.55);
   const s=new THREE.Mesh(sphPart('shell',0,Math.PI*2,Math.PI*.5,Math.PI*.5),matD('#f4f4f1',.35));s.scale.set(.24,.12,.23);s.position.set(0,.5,0);s.castShadow=true;g.add(s);
   const b=new THREE.Mesh(sphPart('shellB',Math.PI,Math.PI,Math.PI*.12,Math.PI*.4),matD('#f4f4f1',.35));b.scale.set(.24,.42,.2);b.position.set(0,.5,0);b.castShadow=true;g.add(b);
@@ -802,7 +802,7 @@ function aSitSmoke(P,t,dt){rest(P);const J=P.J,c=(t+P.ph)%8;
   const d=win(c,1.3,2.6,.45),base=P.ground?[-1.1,.25,-.9]:[-.6,.2,-1.15];
   J.rSh.rotation.set(lerp(base[0],-.5,d),0,lerp(base[1],.5,d));J.rEl.rotation.x=lerp(base[2],-2.4,d);
   const ex=win(c,3.2,4.3,.25);J.neck.rotation.set(-.2*ex,P.lookY||0,0);talk(P,t,c>5&&c<7.4);
-  if(P.cigTip){P.cigTip.getWorldPosition(_v);if(Math.random()<dt*6)puff(_v,.025,2.4,_v2.set((Math.random()-.5)*.03,.12,(Math.random()-.5)*.03),.35);
+  if(P.cigTip){burnCig(P,((t+P.ph)%70)/70,t);P.cigTip.getWorldPosition(_v);if(Math.random()<dt*6)puff(_v,.025,2.4,_v2.set((Math.random()-.5)*.03,.12,(Math.random()-.5)*.03),.35);
     if(ex>.5&&Math.random()<dt*28){P.J.mouthPt.getWorldPosition(_v);puff(_v,.04,1.8,_v2.set(Math.sin(P.yaw)*.3,.1,Math.cos(P.yaw)*.3),.42);}}}
 function aHRvisit(P,t){rest(P);sit(P,.48);const J=P.J;J.spine.rotation.x=.05;J.lSh.rotation.set(-.5,0,-.1);J.lEl.rotation.x=-.9;J.rSh.rotation.set(-.5,0,.1);J.rEl.rotation.x=-.9;
   J.neck.rotation.set(.05+Math.max(0,Math.sin(t*1.1+P.ph))*.1,0,0);talk(P,t,Math.sin(t*.5+P.ph)>.4);}
@@ -867,13 +867,13 @@ function aSmoke(P,t,dt){rest(P);const J=P.J,c=(t+P.ph)%8;
   const d=win(c,1.3,2.6,.45);J.rSh.rotation.set(lerp(-.2,-.38,d),0,lerp(-.06,.5,d));J.rEl.rotation.x=lerp(-1.35,-2.45,d);
   const ex=win(c,3.2,4.3,.25);J.neck.rotation.set(-.2*ex,P.lookY||0,0);
   talk(P,t,c>5&&c<7.4);
-  if(P.cigTip){P.cigTip.getWorldPosition(_v);if(Math.random()<dt*6)puff(_v,.025,2.4,_v2.set((Math.random()-.5)*.03,.12,(Math.random()-.5)*.03),.35);
+  if(P.cigTip){burnCig(P,((t+P.ph)%70)/70,t);P.cigTip.getWorldPosition(_v);if(Math.random()<dt*6)puff(_v,.025,2.4,_v2.set((Math.random()-.5)*.03,.12,(Math.random()-.5)*.03),.35);
     if(ex>.5&&Math.random()<dt*28){P.J.mouthPt.getWorldPosition(_v);puff(_v,.04,1.8,_v2.set(Math.sin(P.yaw)*.35+(Math.random()-.5)*.08,.08,Math.cos(P.yaw)*.35+(Math.random()-.5)*.08),.42);}}}
 function aRail(P,t,dt){rest(P);const J=P.J,c=(t+P.ph)%9;J.spine.rotation.x=.42;J.hips.position.y=STAND-.02;
   J.lSh.rotation.set(-1.45,0,-.2);J.lEl.rotation.x=-.85;J.lHand.rotation.y=1.2;
   const d=win(c,2,3.2,.5);J.rSh.rotation.set(lerp(-1.45,-.95,d),0,lerp(.2,.62,d));J.rEl.rotation.x=lerp(-.85,-2.4,d);
   J.neck.rotation.set(-.35,Math.sin(t*.2)*.4,0);J.rHip.rotation.set(.1,0,.12);J.rKn.rotation.x=.2;J.lHip.rotation.z=.04;
-  const ex=win(c,3.8,4.8,.25);if(P.cigTip){P.cigTip.getWorldPosition(_v);if(Math.random()<dt*6)puff(_v,.025,2.4,_v2.set(0,.12,0),.35);
+  const ex=win(c,3.8,4.8,.25);if(P.cigTip){burnCig(P,((t+P.ph)%70)/70,t);P.cigTip.getWorldPosition(_v);if(Math.random()<dt*6)puff(_v,.025,2.4,_v2.set(0,.12,0),.35);
     if(ex>.5&&Math.random()<dt*28){P.J.mouthPt.getWorldPosition(_v);puff(_v,.04,1.8,_v2.set(.35,.06,(Math.random()-.5)*.08),.42);}}}
 function aTeaStand(P,t){rest(P);const J=P.J,c=(t+P.ph)%10;J.hips.rotation.z=Math.sin(t*.25+P.ph)*.02;J.lKn.rotation.x=.12;
   const d=win(c,1,2,.4);J.rSh.rotation.set(lerp(-.3,-.62,d),0,lerp(.05,.45,d));J.rEl.rotation.x=lerp(-1.45,-2.4,d);
@@ -1082,17 +1082,234 @@ let mode='orbit',player,keys={},joy={x:0,y:0},lookId=null,lookX=0,fly=null;
 const RAD=.28;
 const touchUI=()=>coarse||innerWidth<=820;
 function syncTouchUI(){const w=mode==='walk',t=w&&touchUI();document.getElementById('joy').hidden=!t;document.getElementById('mbtns').hidden=!t;document.body.classList.toggle('touchui',touchUI());}
-function hit(x,z){for(const c of colliders){const cx=Math.max(c[0],Math.min(x,c[1])),cz=Math.max(c[2],Math.min(z,c[3]));if((x-cx)*(x-cx)+(z-cz)*(z-cz)<RAD*RAD)return true;}return x<-16||x>18.6||z<-16||z>10.6;}
+function hit(x,z,y){y=y||0;for(const c of colliders){if(c[4]!==undefined&&c[4]<=y+.05)continue;const cx=Math.max(c[0],Math.min(x,c[1])),cz=Math.max(c[2],Math.min(z,c[3]));if((x-cx)*(x-cx)+(z-cz)*(z-cz)<RAD*RAD)return true;}return x<-16||x>18.6||z<-16||z>10.6;}
 function zoneAt(x,z){let best=null,ba=1e9;for(const zn of ZONES)if(x>=zn.r[0]&&x<=zn.r[1]&&z>=zn.r[2]&&z<=zn.r[3]){const a=(zn.r[1]-zn.r[0])*(zn.r[3]-zn.r[2])+(zn.hide?.5:0);if(a<ba){ba=a;best=zn;}}if(best)return best;for(const zn of ZONES)if(!zn.hide&&x>=zn.r[0]&&x<=zn.r[1]&&z>=zn.r[2]&&z<=zn.r[3])return zn;for(const zn of ZONES)if(x>=zn.r[0]&&x<=zn.r[1]&&z>=zn.r[2]&&z<=zn.r[3])return zn;return null;}
 let lastZone='';
-function updateWalk(t,dt){const P=player;P.cam+=((keys.lookL?1:0)-(keys.lookR?1:0))*1.9*dt;let ix=(keys.right?1:0)-(keys.left?1:0)+joy.x,iy=(keys.fwd?1:0)-(keys.back?1:0)+joy.y;const m=Math.hypot(ix,iy);if(m>1){ix/=m;iy/=m;}
-  const spd=(MT&&MT.auto)?3:keys.run?4:1.8,fx=-Math.sin(P.cam),fz=-Math.cos(P.cam),rx=Math.cos(P.cam),rz=-Math.sin(P.cam);let mx=(fx*iy+rx*ix)*spd*dt,mz=(fz*iy+rz*ix)*spd*dt;if(MT){mx=mz=0;if(MT.auto){const a=autoStep(P,dt);mx=a[0];mz=a[1];}}   // a challenge is running: the game moves you
-  rest(P);if(mx||mz){if(!hit(P.x+mx,P.z))P.x+=mx;if(!hit(P.x,P.z+mz))P.z+=mz;const ty=Math.atan2(mx,mz);let df=ty-P.yaw;df=Math.atan2(Math.sin(df),Math.cos(df));P.yaw+=df*Math.min(1,dt*10);
-    P.wph=(P.wph||0)+dt*spd*4.6;const sn=Math.floor(P.wph/Math.PI);if(sn!==P.sn){P.sn=sn;sfx.play(spd>2?'run':'step');}walkPose(P,P.wph,Math.min(1,spd/1.8));}
-  P.root.position.set(P.x,0,P.z);P.root.rotation.y=P.yaw;life(P,t,dt);
-  let back=2.4;const up=1.95;for(;back>.7;back-=.2){if(!hit(P.x-fx*back,P.z-fz*back))break;}camera.position.set(P.x-fx*back,up,P.z-fz*back);camera.lookAt(P.x+fx*1.5,1.25,P.z+fz*1.5);
-  const gn=MT?null:actNear(),ab=document.getElementById('hudAct');if(gn!==P.gn){P.gn=gn;ab.hidden=!gn;ab.textContent=actText(gn);}
+// Jumping: the player has a height (P.y) and a vertical speed. Low furniture is jumped over or stood on; walls, people and tall things are not.
+const GRAV=22,JUMP_V=6.6;   // a jump peaks at about a metre, enough for a desk or a sofa
+function supportAt(x,z,y){let best=0;for(const c of colliders){const top=c[4]===undefined?99:c[4];if(top>1.3||top<=best)continue;
+  if(x>c[0]-.1&&x<c[1]+.1&&z>c[2]-.1&&z<c[3]+.1&&top<=y+.12)best=top;}return best;}
+function airPose(P){const J=P.J;J.lSh.rotation.set(-.9,0,.5);J.rSh.rotation.set(-.9,0,-.5);J.lHip.rotation.x=-.7;J.rHip.rotation.x=-.35;J.lKn.rotation.x=.9;J.rKn.rotation.x=.5;J.spine.rotation.x=.05;}
+function staggerPose(P,k){const J=P.J;J.neck.rotation.set(-.3*k,.5*k,.35*k);J.spine.rotation.x=-.18*k;J.lSh.rotation.set(-.9*k,0,.5*k);J.rSh.rotation.set(-.9*k,0,-.5*k);}
+function slapPose(P,u){const J=P.J,s=Math.sin(Math.min(1,u)*Math.PI);J.rSh.rotation.set(-1.5+u*1.2,0,-.2-1.0*(1-u));J.rEl.rotation.x=-.3;J.spine.rotation.y=-.5*s;J.rHand.rotation.y=-1.2;}
+function kickPose(P,u){const J=P.J,s=Math.sin(Math.min(1,u)*Math.PI);J.rHip.rotation.x=-1.5*s;J.rKn.rotation.x=.25*s;J.spine.rotation.x=-.3*s;J.lSh.rotation.set(-.5*s,0,.6*s);J.rSh.rotation.set(.5*s,0,-.6*s);J.lKn.rotation.x=.1*s;}
+function offerPose(P,u){const J=P.J,s=Math.sin(Math.min(1,u)*Math.PI);J.rSh.rotation.set(-1.4*s,0,-.12);J.rEl.rotation.x=-.25*s;J.neck.rotation.y=0;if(P.cigGroup)P.cigGroup.visible=s>.1||P.cigGroup.visible;}
+
+/* ---- smoking on the balcony ---- */
+const SMOKE={on:false,t:0,buddy:null},SMOKE_LEN=45;
+function burnCig(P,k,t){if(!P.cigBody)return;const f=1-.7*Math.min(1,k);   // the cigarette gets shorter, and the ember glows and fades
+  P.cigBody.scale.y=f;P.cigBody.position.z=-.0075+.075*f/2;P.cigTip.position.z=-.0075+.075*f;
+  const pulse=.5+.5*Math.sin(t*5+(P.ph||0)),s=.0048*(1+.3*pulse);P.cigTip.scale.set(s,s,s);P.cigTip.material.color.setRGB(1,.3+.3*pulse,.08);}
+function startSmoke(buddy){const P=player;if(lastZone!=='bal'||SMOKE.on)return;
+  if(!P.cigTip)addCig(P);P.cigGroup.visible=true;SMOKE.on=true;SMOKE.t=0;SMOKE.buddy=buddy||null;EMO.id=null;sfx.play('lighter');
+  toast(buddy?'দুজনে মিলে সুখটান! 🚬 ('+buddy+')':'সিগারেট ধরালেন 🚬 (ধূমপান স্বাস্থ্যের জন্য ক্ষতিকর)। হাঁটলে বা লাফ দিলে ফেলে দেবেন।',4500);}
+function stopSmoke(natural){if(!SMOKE.on)return;SMOKE.on=false;SMOKE.buddy=null;if(player.cigGroup)player.cigGroup.visible=false;
+  if(natural)toast('সিগারেট শেষ! এবার কাজে ফিরুন।',3000);}
+
+/* ---- funny little actions you can do anywhere (shown to everyone) ---- */
+const EMOTES=[{id:'dance',bn:'নাচ',em:'💃'},{id:'bow',bn:'কুর্নিশ',em:'🙇'},{id:'yawn',bn:'হাই তোলা',em:'🥱'},{id:'cry',bn:'কান্না',em:'😭'},{id:'sing',bn:'গান',em:'🎤'},
+  {id:'selfie',bn:'সেলফি',em:'🤳'},{id:'jacks',bn:'ব্যায়াম',em:'🏋️'},{id:'cheer',bn:'উল্লাস',em:'🎉'},{id:'facepalm',bn:'কপালে হাত',em:'🤦'},{id:'yoga',bn:'যোগ-ধ্যান',em:'🧘'}];
+const EMO={id:null,t:0};
+function emotePose(P,id,t){const J=P.J,s=Math.sin(t*6),c=Math.cos(t*6);
+  if(P.phone&&id!=='selfie')P.phone.visible=false;
+  if(id==='dance'){J.hips.rotation.z=s*.15;J.hips.position.y=STAND-.02+Math.abs(s)*.03;J.lSh.rotation.set(-2.5+s*.5,0,.4);J.rSh.rotation.set(-2.5-s*.5,0,-.4);J.lEl.rotation.x=-.4;J.rEl.rotation.x=-.4;J.spine.rotation.y=Math.sin(t*3)*.3;J.lHip.rotation.x=s*.35;J.rHip.rotation.x=-s*.35;J.lKn.rotation.x=Math.max(0,-s)*.5;J.rKn.rotation.x=Math.max(0,s)*.5;talk(P,t,true);}
+  else if(id==='bow'){const k=.5+.5*Math.sin(t*1.6-1.57);J.spine.rotation.x=1.05*k;J.neck.rotation.x=.3*k;J.lSh.rotation.set(-.5*k,0,.1);J.rSh.rotation.set(-.5*k,0,-.1);J.lEl.rotation.x=-1.2*k;J.rEl.rotation.x=-1.2*k;}
+  else if(id==='yawn'){const k=.5+.5*Math.sin(t*1.2);J.lSh.rotation.set(-2.7*k,0,.5);J.rSh.rotation.set(-2.7*k,0,-.5);J.neck.rotation.x=-.4*k;J.spine.rotation.x=-.12*k;J.mouth.scale.y=.0025+.014*k;J.lids&&(J.lids[0].rotation.x=J.lids[1].rotation.x=.6*k);}
+  else if(id==='cry'){J.spine.rotation.x=.25+Math.sin(t*14)*.04;J.neck.rotation.x=.45;J.lSh.rotation.set(-1.6,0,.1);J.rSh.rotation.set(-1.6,0,-.1);J.lEl.rotation.x=-2.3;J.rEl.rotation.x=-2.3;J.hips.rotation.z=Math.sin(t*14)*.02;talk(P,t,true);}
+  else if(id==='sing'){J.rSh.rotation.set(-1.7,0,-.3);J.rEl.rotation.x=-1.9;J.lSh.rotation.set(-.3+Math.sin(t*3)*.5,0,.8+Math.sin(t*3)*.3);J.lEl.rotation.x=-.5;J.neck.rotation.set(-.15+Math.sin(t*4)*.1,Math.sin(t*1.5)*.3,0);J.hips.rotation.z=Math.sin(t*3)*.05;talk(P,t,true);}
+  else if(id==='selfie'){if(!P.phone)addPhone(P);P.phone.visible=true;J.rSh.rotation.set(-1.9,0,-.35);J.rEl.rotation.x=-.5;J.lSh.rotation.set(-2.5,0,.6);J.lEl.rotation.x=-.3;J.neck.rotation.set(.05,.2*Math.sin(t*1.2),.25);J.mouth.scale.y=.006;}
+  else if(id==='jacks'){const u=Math.abs(s);J.hips.position.y=STAND-.02+u*.05;J.lSh.rotation.set(0,0,.2+u*2.6);J.rSh.rotation.set(0,0,-.2-u*2.6);J.lHip.rotation.z=u*.35;J.rHip.rotation.z=-u*.35;J.lKn.rotation.x=.1;J.rKn.rotation.x=.1;}
+  else if(id==='cheer'){const u=Math.abs(s);J.hips.position.y=STAND-.02+u*.06;J.lSh.rotation.set(-2.8,0,.3);J.rSh.rotation.set(-2.8,0,-.3);J.lEl.rotation.x=-.3;J.rEl.rotation.x=-.3;J.neck.rotation.x=-.2;talk(P,t,true);J.lKn.rotation.x=u*.3;J.rKn.rotation.x=u*.3;}
+  else if(id==='facepalm'){J.rSh.rotation.set(-1.85,0,-.15);J.rEl.rotation.x=-2.2;J.neck.rotation.x=.5;J.spine.rotation.x=.15;J.lSh.rotation.set(.05,0,.1);J.hips.rotation.z=Math.sin(t*1.2)*.02;}
+  else if(id==='yoga'){J.lHip.rotation.x=-1.25;J.lKn.rotation.x=1.7;J.lSh.rotation.set(-2.9,0,.2);J.rSh.rotation.set(-2.9,0,-.2);J.lEl.rotation.x=-.3;J.rEl.rotation.x=-.3;J.neck.rotation.x=-.08;J.hips.rotation.z=Math.sin(t*.8)*.02;}}
+function setEmote(id){if(SMOKE.on)stopSmoke(false);EMO.id=EMO.id===id?null:id;EMO.t=0;byId('emotes').hidden=true;}
+
+/* ---- hurting people and furniture: slaps and kicks ---- */
+const SLAP={t:-1,cool:0,kind:'slap'},HIT={t:0},FXS={cur:'',until:0,n:0},CMP={on:false,stage:'',t:0,kind:'slap'},TB=[],HITS=[];
+function setFx(kind){FXS.cur=kind+':'+(++FXS.n);FXS.until=performance.now()+2500;}
+function npcPeople(){const set=new Set(acts.map(a=>a.P));for(const P of POOL.players)set.add(P);for(const P of CARROM.players)set.add(P);for(const P of CARROM.watchers)set.add(P);
+  set.delete(player);return[...set].filter(P=>P.root.visible&&!(MT&&MT.parts&&MT.parts.includes(P)));}
+function deskSpotFor(id){let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))>>>0;
+  const free=DESKS.filter(s=>!s.occ),s=free[h%free.length],f0=Math.sin(s[2]),f1=Math.cos(s[2]);return{seat:s,stand:nearFree(s[0]-f0*.9,s[1]-f1*.9)};}
+function myDeskSpot(){return deskSpotFor(PROFILE.empId);}
+// what is in front of me: a boss, a colleague who is here right now, a simulated colleague, somebody's desk, or just furniture
+function hurtTarget(kind){const P=player;if(mode!=='walk'||MT||CMP.on)return null;const fx=Math.sin(P.yaw),fz=Math.cos(P.yaw),reach=kind==='kick'?1.5:1.7;let best=null,bd=reach;
+  const consider=(q,qx,qz,info)=>{const dx=qx-P.x,dz=qz-P.z,d=Math.hypot(dx,dz);if(d<bd&&d>.01&&(dx*fx+dz*fz)/d>.05&&Math.abs((P.y||0)-(q.y||0))<.8){bd=d;best=info;}};
+  for(const id of BOSS_IDS){const B=BS.people[id];if(B&&B.root.visible&&!CHASE.on)consider(B,B.root.position.x,B.root.position.z,{kind:'boss',boss:id,P:B,name:BOSSES[id].bn});}
+  for(const r of NET.remote.values())if(r.P.root.visible&&!(MT&&MT.ids&&MT.ids.includes(r.p.empId)))consider(r.P,r.x,r.z,{kind:'user',id:r.p.empId,P:r.P,r,name:r.p.nickname||shortName(r.p.name)});
+  for(const q of npcPeople())consider(q,q.root.position.x,q.root.position.z,{kind:'npc',P:q,name:''});
+  if(best||kind!=='kick')return best;
+  // nobody there: a desk? (a colleague's desk if they are online, otherwise whoever sits there)
+  let ds=null,dd=1.6;for(const s of DESKS){const dx=s[0]-P.x,dz=s[1]-P.z,d=Math.hypot(dx,dz);if(d<dd&&(dx*fx+dz*fz)/(d||1)>.2){dd=d;ds=s;}}
+  if(ds){for(const r of NET.remote.values()){if(deskSpotFor(r.p.empId).seat===ds)return{kind:'user',id:r.p.empId,P:r.P,r,name:r.p.nickname||shortName(r.p.name),desk:true};}
+    const sitter=npcPeople().find(q=>Math.hypot(q.x-ds[0],q.z-ds[1])<.6);if(sitter)return{kind:'npc',P:sitter,name:'',desk:true};}
+  // plain furniture
+  const ax=P.x+fx*.8,az=P.z+fz*.8;for(const c of colliders){const top=c[4]===undefined?99:c[4];if(top>1.3||top<.05)continue;if(ax>c[0]-.25&&ax<c[1]+.25&&az>c[2]-.25&&az<c[3]+.25)return{kind:'thing'};}
+  return null;}
+function tmpBubble(P,text,sec,cls){const el=document.createElement('div');el.className='bub on '+(cls||'mline');el.textContent=text;bubbleLayer().appendChild(el);TB.push({el,P,left:sec});}
+function tbUpdate(dt){const w=stage.clientWidth,h=stage.clientHeight;
+  for(const t of TB.slice()){t.left-=dt;if(t.left<=0){t.el.remove();TB.splice(TB.indexOf(t),1);continue;}
+    t.P.J.neck.getWorldPosition(_v);_v.y+=.32;_v.project(camera);
+    if(_v.z>1||_v.z<-1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){t.el.style.visibility='hidden';continue;}t.el.style.visibility='';
+    const bw=t.el.offsetWidth,x=Math.max(bw/2+6,Math.min(w-bw/2-6,(_v.x*.5+.5)*w)),y=(-_v.y*.5+.5)*h;t.el.style.transform='translate('+x+'px,'+y+'px) translate(-50%,-100%)';}}
+function hitUpdate(dt){for(const h of HITS.slice()){h.t-=dt;if(h.t<=0){HITS.splice(HITS.indexOf(h),1);continue;}
+  const k=Math.min(1,h.t/.9);staggerPose(h.P,k);const back=Math.sin((1-k)*Math.PI)*.18;h.P.root.position.x=h.x-Math.sin(h.P.yaw)*back;h.P.root.position.z=h.z-Math.cos(h.P.yaw)*back;}}
+function flash(){const f=byId('flash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on');}
+async function api(path,body){try{const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});return await r.json().catch(()=>null);}catch(e){return null;}}
+function doHurt(kind){if(SLAP.cool>0)return;const tg=hurtTarget(kind);if(kind==='slap'&&!tg)return;if(!tg&&kind==='kick')return;
+  SLAP.t=0;SLAP.kind=kind;SLAP.cool=1.2;if(SMOKE.on)stopSmoke(false);EMO.id=null;sfx.play(tg&&tg.kind==='thing'?'bonk':kind==='kick'?'kick':'slap');setFx(kind);
+  const word=kind==='kick'?'লাথি':'চড়';
+  if(tg.kind==='thing'){tmpBubble(player,'উফ! পা ব্যথা পেলাম 😖',2.2);return;}
+  if(tg.kind==='boss'){startTrouble(tg.boss,kind);return;}
+  if(tg.kind==='user'){tg.r.hitT=.9;tmpBubble(tg.P,tg.desk?'আমার ডেস্কে লাথি?! 😱':'আউ! 😵',1.8);
+    api('/api/slap',{action:'slap',target:tg.id,kind:tg.desk?'desk':kind}).then(d=>{
+      if(d&&d.ok)toast((kind==='kick'?'ধুম! ':'চটাস! ')+tg.name+' এইচআরে অভিযোগ করতে গেছেন… শো-কজ আসছে!',4500);else toast((d&&d.error)||word+'টা লাগেনি, আবার চেষ্টা করুন।',3000);});}
+  else{const P=tg.P;if(!HITS.some(h=>h.P===P))HITS.push({P,t:.9,x:P.root.position.x,z:P.root.position.z});
+    const L=tg.desk?['আমার ডেস্কে লাথি?! ডেস্কটা তো আমার সন্তানের মতো!','এই! ডেস্কের কী দোষ?!','আমি এইচআরকে বলছি!']:['আউ! এইচআরকে বলছি!','এই! কী করলেন?!','আমি কিন্তু রেকর্ড করে রাখলাম!','ওরে বাবা! আমার শরীর!'];
+    tmpBubble(P,L[Math.floor(Math.random()*L.length)],2.6);
+    if(!NET.npcPending){NET.npcPending=true;const lk=tg.desk?'npcDesk':kind==='kick'?'npcKick':'npcSlap';setTimeout(()=>npcShowCause(lk),6500);}}}
+async function npcShowCause(lk){NET.npcPending=false;const d=await api('/api/slap',{action:'npc',kind:lk==='npcDesk'?'desk':lk==='npcKick'?'kick':'slap'});
+  if(d&&d.ok){if(PROFILE)PROFILE.employment=d.employment;showLetter(lk,'',d.before,d.employment,d.delta);}else if(d&&d.error)toast(d.error,3000);}
+
+/* ---- show-cause letters: always in Bengali, always a bit silly ---- */
+const LET={
+  slap:[
+    {t:'শো-কজ নোটিশ: হাত এত চালু কেন?',b:'প্রতি: {name}\n\n{v} জানিয়েছেন, আপনার হাত নাকি তাঁর গালের সাথে "পরিচিত" হয়েছে। এই পরিচয়-পর্ব কোম্পানির নিয়মে নেই। আমরা একটা পরিবার ঠিকই, কিন্তু সব আত্মীয়ের গালে চড় মারা যায় না।\n\nউপদেশ: রাগ উঠলে চা খান, হাত তুলবেন না। না পারলে অন্তত হাতে চায়ের কাপ তুলে রাখুন।',s:'ইতি, এইচআর (গাল সুরক্ষা সেল)'},
+    {t:'সতর্কবার্তা: চটাস-কাণ্ড',b:'প্রিয় {name},\n\n{v}-এর গালে আপনার হাতের ছাপ এখনও আছে, ফরেনসিক বিভাগ বলছে ছাপটা আপনার হাতের সাথেই মেলে। আপনি যদি বলেন "মশা মারছিলাম", তাহলে বলে রাখি, মশাটা ছয় ফুট লম্বা ছিল এবং সে অভিযোগ করেছে।\n\nএই চিঠি আপনার চরিত্র-ফাইলে ঢুকে গেল।',s:'শুভকামনায়, এইচআর আপা (এখন একটু রাগান্বিত)'},
+    {t:'কারণ দর্শাও: গালে গান কেন?',b:'{name},\n\nবিনা নোটিশে সহকর্মীর গালে তবলা বাজানো অফিস-আচরণবিধির ৪২ নম্বর ধারার লঙ্ঘন। {v} এই বাদ্যযন্ত্র-ব্যবহারে সম্মতি দেননি।\n\nতিন কর্মদিবসের মধ্যে লিখুন: "আমি আর চড় মারব না" (২০০ বার)। ভুল বানান হলে আরও ২০০ বার।',s:'ইতি, এইচআর বিভাগ (সাংস্কৃতিক শাখা)'}],
+  kick:[
+    {t:'শো-কজ নোটিশ: অফিসে ফুটবল?',b:'প্রতি: {name}\n\n{v}-কে আপনি নাকি ফুটবল ভেবে ভুল করেছেন। আমরা বলে রাখি, তিনি গোলপোস্ট নন, এবং অফিসে গোলের বদলে কাজ করতে হয়।\n\nআপনার জন্য নতুন নিয়ম: লাথি মারার ইচ্ছা হলে সোজা প্যান্ট্রিতে গিয়ে বাতাসকে মারুন।',s:'ইতি, এইচআর (ক্রীড়া ও শৃঙ্খলা শাখা)'},
+    {t:'সতর্কবার্তা: পায়ের প্রতি পায়ের অত্যাচার',b:'প্রিয় {name},\n\n{v} জানিয়েছেন আপনার পা তাঁর পায়ের সাথে "সরাসরি সংঘর্ষ" করেছে। আপনার পা সম্ভবত আপনার মাথার চেয়ে দ্রুত সিদ্ধান্ত নেয়, এটা সুখবর নয়।\n\nসাথে ফ্রি পরামর্শ: জুতোর ফিতা শক্ত করে বাঁধুন, আর মন নরম করুন।',s:'শুভকামনায়, এইচআর আপা'},
+    {t:'কারণ দর্শাও: কিক নাকি কিক-অফ?',b:'{name},\n\nআপনি অফিসের ভেতরে কিক-অফ করেছেন, অথচ ম্যাচ ঘোষণা হয়নি, রেফারি ছিল না, আর {v} খেলোয়াড় হিসেবে নিবন্ধিতও নন।\n\nআপনাকে লাল কার্ড দেওয়া হলো। (আসল কার্ড পরে পাবেন, প্রিন্টার নষ্ট।)',s:'ইতি, এইচআর বিভাগ (রেফারি প্যানেল)'}],
+  desk:[
+    {t:'শো-কজ নোটিশ: ডেস্কের কী দোষ?',b:'প্রতি: {name}\n\n{v}-এর ডেস্ক এখন মানসিক আঘাতে আছে। ডেস্কটা কাঁদছে, কিবোর্ড কাঁপছে, আর মাউস আজ কাজ করতে রাজি নয়। এই ক্ষতির দায় আপনার।\n\nআপনাকে ডেস্কের কাছে ক্ষমা চাইতে হবে, তারপর {v}-এর কাছে।',s:'ইতি, এইচআর (আসবাব কল্যাণ সেল)'},
+    {t:'সতর্কবার্তা: কাঠের ওপর অত্যাচার',b:'প্রিয় {name},\n\nঅফিসের ডেস্ক কথা বলতে পারে না, তাই {v} তার পক্ষে মামলা করেছেন। ডেস্কের ভাষ্য: "আমি তো শুধু কাজের জন্য দাঁড়িয়ে ছিলাম, লাথি খাওয়ার জন্য নই।"\n\nআপনার রেটিং কাটা গেল। ডেস্ককে কাউন্সেলিং নেওয়ানো হচ্ছে, খরচ আপনার।',s:'শুভকামনায়, এইচআর আপা'}],
+  npcSlap:[
+    {t:'শো-কজ নোটিশ: নাম-না-জানা সহকর্মী',b:'প্রতি: {name}\n\nএক নিরীহ সহকর্মী অভিযোগ করেছেন আপনি তাঁকে চড় মেরেছেন। তিনি নাম বলতে চাননি, তবে আপনার চেহারার বর্ণনা দিয়েছেন: "সুন্দর, কিন্তু হাত চালু।"\n\nএইচআর বলছে: হাত দরকার কাজের জন্য, কাজ করুন।',s:'ইতি, এইচআর বিভাগ'}],
+  npcKick:[
+    {t:'শো-কজ নোটিশ: লাথি-কাণ্ড',b:'প্রতি: {name}\n\nএক সহকর্মীর পায়ে আপনার পা আকস্মিক "হ্যালো" বলেছে। তিনি এখনো ঠিকমতো হাঁটতে পারছেন না, তাই আজ বাসায় যেতে ক্যাবের খরচ দিতে হবে।\n\nবিল আপনার বেতন থেকে কাটা হবে না (বেতন আসবে আগামী সপ্তাহে, মনে আছে?)।',s:'ইতি, এইচআর বিভাগ'}],
+  npcDesk:[
+    {t:'শো-কজ নোটিশ: ডেস্ক-আক্রমণ',b:'প্রতি: {name}\n\nআপনি কাউকে নয়, তার ডেস্ককে লাথি মেরেছেন। ডেস্কের মালিক বলছেন, "ডেস্কই আমার সঙ্গী, ও না থাকলে অফিসে আমার আর কেউ নেই।"\n\nআপনার বিরুদ্ধে ডেস্কের মানহানির মামলাও করা হচ্ছে।',s:'ইতি, এইচআর বিভাগ'}],
+  ceo:[
+    {t:'চূড়ান্ত সতর্কীকরণ ও সাময়িক বরখাস্ত',b:'প্রতি: {name}\n\nআপনি সরাসরি সিইওর গায়ে হাত তুলেছেন! এই ঘটনা কোম্পানির ইতিহাসে প্রথম, এবং সম্ভবত শেষ, কারণ আপনি আর বেশিদিন থাকছেন না।\n\nআপনার এমপ্লয়মেন্ট রেটিং ৪০ পয়েন্ট কাটা হলো, আর পরবর্তী ছয় মাস আপনার চেয়ারে বসার অধিকার সিইওর পোষা ক্যাকটাসের থাকবে।\n\nআপনাকে সিইওর রুমে ডেকে ১ ঘণ্টা মোটিভেশনাল লেকচার শোনানো হবে। এটাই আসল শাস্তি।',s:'ইতি, সিইও (স্বাক্ষর: হিজিবিজি, তবে রাগ নিয়ে)'}],
+  hr:[
+    {t:'চূড়ান্ত সতর্কীকরণ: এইচআরের গায়ে হাত!',b:'প্রিয় {name},\n\nআমরা একটা পরিবার, আর পরিবারের এইচআরের গায়ে হাত তোলা মানে পুরো পরিবার ঘরছাড়া হওয়ার ঝুঁকি। আপনার ফাইলে লাল কালিতে বড় করে লেখা হলো: "বিপজ্জনক"।\n\nএমপ্লয়মেন্ট রেটিং ৩০ পয়েন্ট কাটা হলো। এবার ঈদের বোনাসও আপনার চেহারা দেখে দেওয়া হবে।\n\nআপনাকে ৩ দিন "আমি আমার আচরণ বদলাব" লিখে এইচআরের টেবিলে জমা দিতে হবে (হাতে লিখে)।',s:'শুভকামনায়, এইচআর আপা (মুখে হাসি, চোখে আগুন)'}],
+  mgr:[
+    {t:'ম্যানেজারের ব্যক্তিগত ও চূড়ান্ত বার্তা',b:'{name},\n\nতুমি আমাকে মেরেছ। আমি কিছু বলছি না। আমি শুধু আমার চোখের জল আটকাচ্ছি। আর এই মাসের সব ডেডলাইন তোমার নামে বসাচ্ছি।\n\nএমপ্লয়মেন্ট রেটিং ২৫ পয়েন্ট কাটা হলো। কাল সকাল ৮টায় ১-অন-১, সাথে বড় কাপের কফি আনবে (আমার জন্য)।\n\nআমি রাগ করিনি। আমি শুধু হতাশ। এবং একটু রাগও।',s:'—তোমার ম্যানেজার (আর কখনো তোমার বন্ধু নয়)'}]};
+function showLetter(kind,victim,before,after,delta){const set=LET[kind]||LET.slap,L=set[Math.floor(Math.random()*set.length)],name=window.CB_PLAYER.name;
+  byId('lTitle').textContent=L.t;byId('lBody').textContent=L.b.replace(/\{name\}/g,name).replace(/\{v\}/g,victim||'সহকর্মী');byId('lSign').textContent=L.s;
+  const cut=byId('lCut');cut.className='lcut bad';cut.textContent='এমপ্লয়মেন্ট রেটিং '+bnd(before)+' → '+bnd(after)+' (−'+bnd(delta)+')'+(after<=0?' · আপনি এখন "পরীক্ষাধীন কর্মী" 😬':'');
+  byId('lOk').disabled=false;byId('mletter').hidden=false;sfx.play('fail');}
+// someone you hurt has complained: HR's letter reaches you
+function applyNotices(list){for(const n of list){if(NET.handled.has('n'+n.id))continue;NET.handled.add('n'+n.id);if(PROFILE)PROFILE.employment=n.after;
+  showLetter(n.kind==='kick'?'kick':n.kind==='desk'?'desk':'slap',n.victim,n.before,n.after,n.delta);}}
+
+/* ---- I was hurt: stagger, walk to HR, complain ---- */
+function applySlaps(list){for(const s of list){if(NET.handled.has('s'+s.id)||CMP.on)continue;NET.handled.add('s'+s.id);onSlapped(s);}}
+let HRP=null;
+function hrPerson(){if(HRP&&HRP.root.visible)return HRP;HRP=acts.map(a=>a.P).find(P=>P.x>14.8&&P.x<18&&P.z>.5&&P.z<7.5)||null;return HRP;}
+function onSlapped(s){Object.assign(CMP,{on:true,stage:'hit',t:0,id:s.id,kind:s.kind||'slap',slapper:s.name,auto:null,arrived:false,hrSaid:false});
+  if(CHASE.on)endChase();HIT.t=.9;flash();sfx.play(s.kind==='kick'||s.kind==='desk'?'kick':'slap');setFx('hit');tmpBubble(player,s.kind==='desk'?'আমার ডেস্ক!! 😱':'আউ! 😵',1.8);
+  toast(s.name+(s.kind==='desk'?' আপনার ডেস্কে লাথি মেরেছে!':s.kind==='kick'?' আপনাকে লাথি মেরেছে!':' আপনাকে চড় মেরেছে!')+' এইচআরে অভিযোগ করতে যাচ্ছেন…',4500);if(SMOKE.on)stopSmoke(false);EMO.id=null;}
+function cmpUpdate(dt){if(!CMP.on)return;CMP.t+=dt;const P=player;
+  if(CMP.kind==='smokejoin'){if(CMP.arrived||CMP.t>25){CMP.auto=null;const r=NET.remote.get(CMP.buddyId);if(r)P.yaw=Math.atan2(r.x-P.x,r.z-P.z);CMP.on=false;startSmoke(CMP.buddyName);}return;}
+  if(CMP.stage==='hit'&&CMP.t>1.1){
+    if(mode==='walk'&&!MT){const spot=CMP.kind==='trouble'?nearFree(-13.2,3.9):nearFree(15.7,4.1);CMP.stage='walk';CMP.t=0;CMP.arrived=false;CMP.auto=route(P.x,P.z,spot[0],spot[1]);}
+    else{CMP.stage='file';CMP.t=0;}}
+  else if(CMP.stage==='walk'&&(CMP.arrived||CMP.t>45)){CMP.auto=null;CMP.stage='speak';CMP.t=0;
+    if(CMP.kind==='trouble'){tmpBubble(player,'স্যার... মাফ করে দিন... 🙏',3.4);}
+    else{const hr=hrPerson();if(hr)P.yaw=Math.atan2(hr.x-P.x,hr.z-P.z);tmpBubble(P,'ম্যাডাম, '+CMP.slapper+(CMP.kind==='desk'?' আমার ডেস্কে লাথি মেরেছে! 😭':CMP.kind==='kick'?' আমাকে লাথি মেরেছে! 😭':' আমাকে চড় মেরেছে! 😭'),3.4);}}
+  else if(CMP.stage==='speak'){
+    if(CMP.kind==='trouble'){const B=BS.people[CMP.boss];if(CMP.t>1.2&&!CMP.hrSaid){CMP.hrSaid=true;if(B)tmpBubble(B,['এত বড় সাহস?! তোমার চাকরি এখন ঝুলছে!','আমার গায়ে হাত?! এবার বুঝবে মজা!','এই চিঠি তোমার জীবনের সেরা চিঠি হবে!'][Math.floor(Math.random()*3)],3.6);sfx.play('pop');}
+      if(CMP.t>4.8){CMP.stage='file';CMP.t=0;}}
+    else{const hr=hrPerson();if(CMP.t>1.7&&!CMP.hrSaid){CMP.hrSaid=true;if(hr)tmpBubble(hr,['কী?! এত সাহস! আমি এখনই শো-কজ পাঠাচ্ছি! 😠','এই অফিসে এসব চলবে না! আমি চিঠি লিখছি!','নাম বলুন, আমি এক্ষুনি কারণ দর্শাও পাঠাচ্ছি!'][Math.floor(Math.random()*3)],3.2);sfx.play('pop');}
+      if(CMP.t>4.6){CMP.stage='file';CMP.t=0;}}}
+  else if(CMP.stage==='file'){CMP.stage='done';
+    if(CMP.kind==='trouble'){api('/api/slap',{action:'boss',boss:CMP.boss,kind:CMP.act||'slap'}).then(d=>{
+        if(d&&d.ok){if(PROFILE){PROFILE.employment=d.employment;PROFILE.xp=d.xp;}showLetter(CMP.boss,'',d.before,d.employment,d.delta);}else toast((d&&d.error)||'এবারের মতো বেঁচে গেলেন!',3500);
+        CMP.on=false;});}
+    else api('/api/slap',{action:'complain',id:CMP.id}).then(d=>{
+      toast(d&&d.ok?'অভিযোগ জমা হয়েছে। এইচআর '+CMP.slapper+' কে শো-কজ পাঠিয়েছে ✉️':((d&&d.error)||'অভিযোগ জমা হয়নি।'),4500);CMP.on=false;});}}
+// I hit a superior: the boss drags me to the CEO's room and I get a very serious letter
+function startTrouble(boss,kind){if(CMP.on)return;if(CHASE.on)endChase();const B=BS.people[boss];
+  Object.assign(CMP,{on:true,stage:'hit',t:0,kind:'trouble',boss,act:kind,auto:null,arrived:false,hrSaid:false,slapper:''});
+  flash();sfx.play('fail');sfx.play('door');if(B)tmpBubble(B,'কী?!! 😡',2);if(SMOKE.on)stopSmoke(false);EMO.id=null;
+  toast(BOSSES[boss].bn+'কে '+(kind==='kick'?'লাথি':'চড়')+' মারলেন?! এবার আর রক্ষা নেই… 😱',4500);}
+
+/* ---- inviting a colleague for a smoke on the balcony ---- */
+const OFFER={t:-1},SOC={out:null};
+function smokeBuddy(){if(lastZone!=='bal'||SMOKE.on||MT||CMP.on||SOC.out)return null;let best=null,bd=2.8;
+  for(const r of NET.remote.values()){if(!r.P.root.visible||r.p.zone!=='bal')continue;const d=Math.hypot(r.x-player.x,r.z-player.z);if(d<bd){bd=d;best=r;}}return best;}
+function sendSmokeInvite(r){if(!r||SOC.out)return;OFFER.t=0;setFx('offer');if(!player.cigTip)addCig(player);player.cigGroup.visible=true;sfx.play('pop');
+  tmpBubble(player,['ভাই, একটা সুখটান দেবেন? 🚬','চলেন, বারান্দায় এক টান হয়ে যাক!','বস নেই, এই সুযোগে একটা টান?'][Math.floor(Math.random()*3)],3.2);
+  SOC.out={name:r.p.nickname||shortName(r.p.name),id:r.p.empId};
+  api('/api/social',{action:'send',target:r.p.empId,kind:'smoke'}).then(d=>{if(!(d&&d.ok)){toast((d&&d.error)||'ডাকটা পৌঁছায়নি।',3000);SOC.out=null;if(player.cigGroup&&!SMOKE.on)player.cigGroup.visible=false;}
+    else setTimeout(()=>{if(SOC.out){SOC.out=null;if(!SMOKE.on&&player.cigGroup)player.cigGroup.visible=false;toast('কোনো সাড়া নেই… একাই টানুন তাহলে 😅',3000);}},45000);});}
+function showSmokeInvite(s){NET.smokeId=s.id;byId('smkT').textContent=shortName(s.name)+' আপনাকে বারান্দায় সিগারেট খেতে ডাকছে! 🚬';byId('msmoke').hidden=false;sfx.play('pop',.4);
+  clearTimeout(NET.smkT);NET.smkT=setTimeout(()=>{if(NET.smokeId===s.id)closeSmokeInvite();},42000);NET.smokeFrom=s;}
+function closeSmokeInvite(){byId('msmoke').hidden=true;NET.smokeId=null;clearTimeout(NET.smkT);}
+async function answerSmoke(yes){const s=NET.smokeFrom;if(!s||NET.smokeId==null)return;closeSmokeInvite();
+  const d=await api('/api/social',{action:'respond',id:s.id,accept:yes});
+  if(yes&&d&&d.ok){const r=NET.remote.get(s.fromId),P=player;
+    if(r&&mode==='walk'&&!MT&&!CMP.on){const spot=nearFree(r.x-Math.sin(r.yaw)*.0+.9,r.z+.2);Object.assign(CMP,{on:true,stage:'walk',t:0,kind:'smokejoin',auto:route(P.x,P.z,spot[0],spot[1]),arrived:false,buddyName:shortName(s.name),buddyId:s.fromId});if(SMOKE.on)stopSmoke(false);EMO.id=null;}
+    else toast('বারান্দায় গেলে একসাথে টান দিতে পারবেন!',3000);}
+  else if(!yes)toast('ডাকটা ফিরিয়ে দিলেন 🙅',2000);}
+// the answer to my invitation reached me
+function applySocialOut(list){for(const o of list){if(NET.handled.has('o'+o.id))continue;NET.handled.add('o'+o.id);SOC.out=null;
+  if(o.status==='accepted'){toast(shortName(o.name)+' আসছে! সিগারেট জ্বালান 🚬',3000);if(!SMOKE.on)startSmoke(shortName(o.name));}
+  else{toast(shortName(o.name)+' বলল: "না ভাই, আমি ছেড়ে দিয়েছি… গতকাল থেকে!" 😂',4000);if(!SMOKE.on&&player.cigGroup)player.cigGroup.visible=false;}}}
+function applySocialIn(list){for(const s of list){if(NET.handled.has('i2'+s.id))continue;NET.handled.add('i2'+s.id);if(MT||CMP.on||SMOKE.on){api('/api/social',{action:'respond',id:s.id,accept:false});continue;}showSmokeInvite(s);}}
+
+function updateWalk(t,dt){const P=player;
+  P.cam+=((keys.lookL?1:0)-(keys.lookR?1:0))*1.9*dt;let ix=(keys.right?1:0)-(keys.left?1:0)+joy.x,iy=(keys.fwd?1:0)-(keys.back?1:0)+joy.y;const m=Math.hypot(ix,iy);if(m>1){ix/=m;iy/=m;}
+  if(SLAP.cool>0)SLAP.cool-=dt;if(HIT.t>0)HIT.t-=dt;
+  const cmpBusy=CMP.on&&CMP.stage!=='done';
+  const spd=((MT&&MT.auto)||(cmpBusy&&CMP.auto))?3:keys.run?4:1.8,fx=-Math.sin(P.cam),fz=-Math.cos(P.cam),rx=Math.cos(P.cam),rz=-Math.sin(P.cam);
+  let mx=(fx*iy+rx*ix)*spd*dt,mz=(fz*iy+rz*ix)*spd*dt;
+  if(MT){mx=mz=0;if(MT.auto){const a=autoStep(P,dt);mx=a[0];mz=a[1];}}   // a challenge is running: the game moves you
+  else if(cmpBusy){mx=mz=0;if(CMP.auto){const a=autoWalk(P,dt,CMP);mx=a[0];mz=a[1];}}   // you are being walked somewhere (HR, the CEO's room, a smoke)
+  else if(HIT.t>0)mx=mz=0;
+  const moving=!!(mx||mz);
+  if(SMOKE.on&&(moving||lastZone!=='bal'))stopSmoke(false);
+  if(EMO.id&&moving)EMO.id=null;
+  if(keys.jump){keys.jump=false;if(P.gnd!==false&&!MT&&!cmpBusy&&HIT.t<=0){P.vy=JUMP_V;P.gnd=false;sfx.play('jump');if(SMOKE.on)stopSmoke(false);EMO.id=null;}}
+  const y0=P.y||0;
+  if(moving){if(!hit(P.x+mx,P.z,y0))P.x+=mx;if(!hit(P.x,P.z+mz,y0))P.z+=mz;const ty=Math.atan2(mx,mz);let df=ty-P.yaw;df=Math.atan2(Math.sin(df),Math.cos(df));P.yaw+=df*Math.min(1,dt*10);}
+  P.vy=(P.vy||0)-GRAV*dt;let ny=y0+P.vy*dt;const fl=supportAt(P.x,P.z,Math.max(y0,ny)),was=P.gnd;
+  if(ny<=fl){ny=fl;P.vy=0;P.gnd=true;if(was===false)sfx.play('land');}else P.gnd=false;
+  P.y=ny;
+  rest(P);
+  if(P.phone&&!(EMO.id==='selfie'))P.phone.visible=false;
+  if(HIT.t>0)staggerPose(P,Math.min(1,HIT.t/.9));
+  else if(!P.gnd)airPose(P);
+  else if(SMOKE.on&&!moving){SMOKE.t+=dt;aSmoke(P,t,dt);burnCig(P,SMOKE.t/SMOKE_LEN,t);if(SMOKE.t>=SMOKE_LEN)stopSmoke(true);}
+  else if(EMO.id&&!moving){EMO.t+=dt;emotePose(P,EMO.id,EMO.t);}
+  else if(moving){P.wph=(P.wph||0)+dt*spd*4.6;const sn=Math.floor(P.wph/Math.PI);if(sn!==P.sn){P.sn=sn;sfx.play(spd>2?'run':'step');}walkPose(P,P.wph,Math.min(1,spd/1.8));}
+  if(SLAP.t>=0){SLAP.t+=dt;if(SLAP.t<.45)(SLAP.kind==='kick'?kickPose:slapPose)(P,SLAP.t/.45);else SLAP.t=-1;}
+  if(OFFER.t>=0){OFFER.t+=dt;offerPose(P,OFFER.t/1.6);if(OFFER.t>1.6){OFFER.t=-1;if(!SMOKE.on&&!SOC.out&&P.cigGroup)P.cigGroup.visible=false;}}
+  P.root.position.set(P.x,P.y,P.z);P.root.rotation.y=P.yaw;life(P,t,dt);
+  let back=2.4;const up=1.95+P.y*.6;for(;back>.7;back-=.2){if(!hit(P.x-fx*back,P.z-fz*back))break;}camera.position.set(P.x-fx*back,up,P.z-fz*back);camera.lookAt(P.x+fx*1.5,1.25+P.y*.5,P.z+fz*1.5);
+  const gn=(MT||CMP.on)?null:actNear(),ab=document.getElementById('hudAct');if(gn!==P.gn){P.gn=gn;ab.hidden=!gn;ab.textContent=actText(gn);}
+  const sT=hurtTarget('slap'),kT=hurtTarget('kick'),sb=byId('hudSlap'),kb=byId('hudKick'),ib=byId('hudInvite'),bd=smokeBuddy();
+  if(!!sT!==!sb.hidden)sb.hidden=!sT;const kShow=!!kT&&kT.kind!=='thing';if(kShow!==!kb.hidden)kb.hidden=!kShow;if(!!bd!==!ib.hidden){ib.hidden=!bd;if(bd)ib.textContent=(touchUI()?'':'G চাপুন: ')+'🚬 '+(bd.p.nickname||shortName(bd.p.name))+' কে সিগারেটে ডাকুন';}
+  P.buddy=bd;
   const zn=zoneAt(P.x,P.z),id=zn?zn.id:'';if(id!==lastZone){lastZone=id;sfx.traffic(id==='bal'?1:0);document.getElementById('hudZone').innerHTML=zn?zn.bn+'<small>'+zn.en+'</small>':'বাইরে<small>Outside</small>';}}
+// the boss marches you to the CEO's room
+function troubleEscort(B,dt,t){const U=player,tx=U.x-Math.sin(U.yaw)*1.0,tz=U.z-Math.cos(U.yaw)*1.0,dx=tx-B.x,dz=tz-B.z,d=Math.hypot(dx,dz);
+  if(d>6){B.x=tx;B.z=tz;}else{const s=Math.min(d,4*dt);B.x+=dx/(d||1)*s;B.z+=dz/(d||1)*s;}
+  let df=Math.atan2(U.x-B.x,U.z-B.z)-B.yaw;df=Math.atan2(Math.sin(df),Math.cos(df));B.yaw+=df*Math.min(1,dt*8);
+  rest(B);if(d>.2){CHASE.wph+=dt*4*3.4;walkPose(B,CHASE.wph,1);}else{B.J.lSh.rotation.set(-.35,0,.45);B.J.lEl.rotation.x=-1.6;B.J.rSh.rotation.set(-.35,0,-.45);B.J.rEl.rotation.x=-1.6;talk(B,t,true);}
+  B.root.position.set(B.x,0,B.z);B.root.rotation.y=B.yaw;life(B,t,dt);}
+function wireActionUI(){
+  byId('hudSlap').addEventListener('click',()=>doHurt('slap'));byId('hudKick').addEventListener('click',()=>doHurt('kick'));
+  byId('hudInvite').addEventListener('click',()=>{const b=player.buddy;if(b)sendSmokeInvite(b);});
+  byId('smkYes').addEventListener('click',()=>answerSmoke(true));byId('smkNo').addEventListener('click',()=>answerSmoke(false));
+  const E=byId('emotes'),list=byId('emoList');
+  EMOTES.forEach(e=>{const b=document.createElement('button');b.type='button';b.className='emo';b.innerHTML='<span>'+e.em+'</span>'+e.bn;b.addEventListener('click',()=>setEmote(e.id));list.appendChild(b);});
+  byId('emoBtn').addEventListener('click',()=>{E.hidden=!E.hidden;});byId('emoClose').addEventListener('click',()=>{E.hidden=true;});
+  const bj=byId('bJump'),bs=byId('bSlap'),bk=byId('bKick');
+  bj.addEventListener('click',()=>{keys.jump=true;});bs.addEventListener('click',()=>doHurt('slap'));bk.addEventListener('click',()=>doHurt('kick'));
+  for(const id of['msmoke','emotes']){const el=byId(id);el.addEventListener('keydown',e=>e.stopPropagation());el.addEventListener('keyup',e=>e.stopPropagation());}}
 function flyTo(tg,off,dur){const tT=new THREE.Vector3(tg[0],tg[1],tg[2]);fly={fP:camera.position.clone(),fT:controls.target.clone(),tP:tT.clone().add(new THREE.Vector3(off[0],off[1],off[2])),tT,t:0,d:dur||.9};}
 function updFly(dt){if(!fly)return;fly.t=Math.min(1,fly.t+dt/fly.d);const e=fly.t<.5?2*fly.t*fly.t:1-Math.pow(-2*fly.t+2,2)/2;camera.position.lerpVectors(fly.fP,fly.tP,e);controls.target.lerpVectors(fly.fT,fly.tT,e);if(fly.t>=1)fly=null;}
 function setMode(m){if(MT&&m!=='walk')return;const prev=mode;mode=m;document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===m)));
@@ -1119,10 +1336,10 @@ function wireUI(){
   for(const z of ZONES){if(z.hide)continue;const li=document.createElement('li'),b=document.createElement('button');b.className='zone';b.innerHTML='<b>'+z.bn+'</b><small>'+z.what+'</small>';
     b.addEventListener('click',()=>{if(mode==='walk'){player.x=z.sp[0];player.z=z.sp[1];return;}if(mode!=='orbit')setMode('orbit');setTimeout(()=>flyTo([z.c[0],0,z.c[1]],z.id==='bal'?[0,4.5,-4.5]:[2.8,4.6,4.8],1),0);});
     li.appendChild(b);zl.appendChild(li);}
-  const KM={KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',ShiftLeft:'run',ShiftRight:'run'};
-  addEventListener('keydown',e=>{if(mode!=='walk')return;if(e.code==='KeyE'){interact();return;}if(KM[e.code]){keys[KM[e.code]]=true;if(e.code.startsWith('Arrow'))e.preventDefault();}});
+  const KM={Space:'jump',KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',ShiftLeft:'run',ShiftRight:'run'};
+  addEventListener('keydown',e=>{if(mode!=='walk')return;if(e.code==='KeyE'){interact();return;}if(e.code==='KeyF'){doHurt('slap');return;}if(e.code==='KeyK'){doHurt('kick');return;}if(e.code==='KeyG'){if(player.buddy)sendSmokeInvite(player.buddy);return;}if(e.code==='KeyQ'){byId('emotes').hidden=!byId('emotes').hidden;return;}if(KM[e.code]){keys[KM[e.code]]=true;if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();}});
   addEventListener('keyup',e=>{if(KM[e.code])keys[KM[e.code]]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
-  document.getElementById('hudAct').addEventListener('click',()=>interact());wireMatchUI();wireNetUI();wireBossUI();
+  document.getElementById('hudAct').addEventListener('click',()=>interact());wireMatchUI();wireNetUI();wireBossUI();wireActionUI();
   const hold=(id,k)=>{const b=document.getElementById(id),on=e=>{e.preventDefault();keys[k]=true;try{b.setPointerCapture(e.pointerId);}catch(_){}},off=()=>{keys[k]=false;};
     b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('lostpointercapture',off);b.addEventListener('contextmenu',e=>e.preventDefault());};
   hold('bLookL','lookL');hold('bLookR','lookR');
@@ -1175,7 +1392,7 @@ function initLogin(){
       try{if(document.getElementById('remember').checked)localStorage.setItem('cb-login',JSON.stringify({email,role}));else localStorage.removeItem('cb-login');}catch(e){}
       window.CB_PLAYER={name,role,late,empId:emp.empId,designation:emp.designation,branch:emp.branch,department:emp.department,promise:document.getElementById('promise').checked};initProfile(emp);
       setTimeout(()=>{clearInterval(tick);PAUSE3D=false;L.classList.add('out');setTimeout(()=>{L.hidden=true;toast((document.getElementById('promise').checked?'':'প্রতিজ্ঞা করেননি? বস লক্ষ্য করেছে। ')+'গেটের বাইরে আছেন। ফেস স্ক্যানারের কাছে গিয়ে E চাপুন।',6000);},600);
-        setPlayerModel(emp.gender,emp.model);setMode('walk');place(player,.3,-14.2,0);player.cam=Math.PI;},1300);
+        setPlayerModel(emp.gender,emp.model,emp.look);setMode('walk');place(player,.3,-14.2,0);player.cam=Math.PI;},1300);
     },()=>fail('নেটওয়ার্ক সমস্যা। আবার চেষ্টা করুন।'));};
   document.getElementById('lform').addEventListener('submit',e=>{e.preventDefault();enter('finger');});
   document.getElementById('faceBtn').addEventListener('click',()=>enter('face'));
@@ -1242,10 +1459,24 @@ const MODELS={
     {n:'ডার্ক কুইন',o:{skin:'#9a6844',top:'#7e2c3a',bot:'#2a2a2e',orna:'#c9e0e2',trim:'#e9c6c9',hs:'long',hair:'#141010',glasses:false,sandal:false}}]};
 const modelList=g=>MODELS[g==='f'?'f':'m'];
 const modelOf=(g,i)=>{const L=modelList(g);return L[i>=0&&i<L.length?i:0];};
-function mkModel(g,i){const o=Object.assign({},modelOf(g,i).o);return g==='f'?mkWoman(o):mkMan(o);}
+// what you can change on top of a preset model (the same choices, checked again by the server)
+const SKIN_TONES=['#f1c9a5','#e8b98f','#dcae84','#d6a378','#c48a5f','#b07a50','#a87452','#9a6844','#8c5c3c','#6b4429'];
+const HAIR_COLS=['#16110e','#3a2418','#5b5550','#8a5a2b','#b8863b','#c9c2b5','#7a1f26','#2f3a4f'];
+const TOP_M=['#f4f4f2','#cfe0f2','#4f7cac','#2f3a4f','#1d1d1f','#b3261e','#e2622b','#c9a227','#3c6e47','#2f6f73','#5b2a86','#8a8f96'];
+const BOT_M=['#2a2f3a','#1e1f24','#4a4d54','#3b3f4a','#8b7d63','#b9a27a','#2d4a73','#3b5a85'];
+const TOP_F=['#b3261e','#b8475a','#d98b6d','#c08a2b','#467a4a','#2f6f73','#2e5a8c','#5e3a7a','#7e2c3a','#1d1d1f','#f1e8d6','#e9c6c9'];
+const BOT_F=['#2a2a2e','#efe6d6','#e9dfd0','#d9c7b0','#2e5a8c','#7e2c3a','#467a4a','#5e3a7a'];
+const ORNA_COLS=['#f0d9a0','#e9c6c9','#c9e0e2','#f3e5c8','#d7c3e6','#ffffff'];
+const HIJAB_COLS=['#3a3f52','#7a5a4a','#c7b29a','#5b6e7a','#8a3b47','#e0d4c0','#1d1d1f','#2e5a8c'];
+function lookFix(g,base,look){const o=Object.assign({},base);if(!look)return o;Object.assign(o,look);
+  if(g==='f'){if(o.hs==='hijab'&&!o.hijab)o.hijab='#e0d4c0';if(look.orna)o.trim=look.orna;}
+  else{if(look.style){o.tie=look.style==='shirt'&&base.tie?base.tie:null;if(look.style!=='tee')o.print=null;if(look.style==='shirt'&&!look.sleeve)o.sleeve='long';}
+    if(look.jeans===true&&!look.bot)o.bot='#2d4a73';if(look.jeans===false&&!look.bot&&base.jeans)o.bot='#2a2f3a';}
+  return o;}
+function mkModel(g,i,look){const o=lookFix(g==='f'?'f':'m',modelOf(g,i).o,look);return g==='f'?mkWoman(o):mkMan(o);}
 // your own character: rebuilt whenever your gender or model changes, kept where you stand
-function setPlayerModel(g,i){g=g==='f'?'f':'m';i=Number.isInteger(i)?i:0;if(player.o.g===g&&player.mi===i)return;
-  const old=player,np=mkModel(g,i);np.mi=i;place(np,old.x,old.z,old.yaw);np.cam=old.cam;np.root.visible=old.root.visible;scene.remove(old.root);player=np;}
+function setPlayerModel(g,i,look){g=g==='f'?'f':'m';i=Number.isInteger(i)?i:0;const key=JSON.stringify(look||{});if(player.o.g===g&&player.mi===i&&player.lk===key)return;
+  const old=player,np=mkModel(g,i,look);np.mi=i;np.lk=key;place(np,old.x,old.z,old.yaw);np.cam=old.cam;np.root.visible=old.root.visible;scene.remove(old.root);player=np;}
 // a small flat portrait of a model for the picker
 function modelSvg(g,m){const o=m.o,NS='http://www.w3.org/2000/svg',s=document.createElementNS(NS,'svg');s.setAttribute('viewBox','0 0 40 46');
   const add=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);s.appendChild(e);return e;};
@@ -1315,15 +1546,16 @@ function updTips(dt){const w=stage.clientWidth,h=stage.clientHeight;
 const DTABLES=[-8.2,-5.65,-4.35,-3.05,-1.75,-.45].map(z=>({x:15.95,z}));
 function diningNear(){if(MT||lastZone!=='dine'||!player)return-1;let b=-1,bd=1.75;DTABLES.forEach((t,i)=>{const d=Math.hypot(player.x-t.x,player.z-t.z);if(d<bd){bd=d;b=i;}});return b;}
 function tableNear(){if(MT)return null;
+  if(lastZone==='bal')return SMOKE.on?'smokeStop':'smoke';
   if(lastZone==='game'){const x=player.x,z=player.z;if(Math.hypot(x-2.6,z-5)<2.1)return'pool';if(Math.hypot(x+1.8,z-5)<1.5)return'carrom';return null;}
   if(lastZone==='dine'&&diningNear()>=0)return CLK.free?'dine':'dineBusy';return null;}
 function actNear(){return gateNear()||tableNear();}
 function interact(){const n=actNear();
-  if(n==='pool'||n==='carrom')openPicker(n,false);else if(n==='dine')openPicker('uno',true);
+  if(n==='pool'||n==='carrom')openPicker(n,false);else if(n==='dine')openPicker('uno',true);else if(n==='smoke')startSmoke();else if(n==='smokeStop')stopSmoke(false);
   else if(n==='dineBusy')toast('ডাইনিং এখন লাঞ্চ-ব্রেকে ব্যস্ত। বিকেল ৫টার পর ফাঁকা হলে খেলতে পারবেন।',3500);
   else gateInteract();}
 function actText(n){const k=touchUI()?'ট্যাপ করুন: ':'E চাপুন: ';
-  return n==='btn'?k+'এক্সিট বাটন চাপুন':n==='face'?k+'ফেস স্ক্যান করে দরজা খুলুন':n==='pool'?k+'পুল খেলুন 🎱':n==='carrom'?k+'ক্যারম খেলুন 🎯':n==='dine'?k+'উনো, দাবা বা লুডু খেলুন 🎲':n==='dineBusy'?'ডাইনিং এখন ব্যস্ত, বিকেল ৫টার পর খেলা যাবে':'';}
+  return n==='btn'?k+'এক্সিট বাটন চাপুন':n==='face'?k+'ফেস স্ক্যান করে দরজা খুলুন':n==='pool'?k+'পুল খেলুন 🎱':n==='carrom'?k+'ক্যারম খেলুন 🎯':n==='dine'?k+'উনো, দাবা বা লুডু খেলুন 🎲':n==='smoke'?k+'সিগারেট ধরান 🚬':n==='smokeStop'?k+'সিগারেট ফেলে দিন':n==='dineBusy'?'ডাইনিং এখন ব্যস্ত, বিকেল ৫টার পর খেলা যাবে':'';}
 
 /* ---- picking who to invite ---- */
 const ratingOf=(e,g)=>(e.ratings&&e.ratings[g])||1000;
@@ -1357,7 +1589,7 @@ async function openPicker(game,dining){if(MT)return;pickGame=game;pickDining=!!d
 const LIVE_WAIT=35;   // seconds a live colleague has to answer
 const nowMs=m=>Date.now()+(m&&m.live?NET.skew:0);
 function pickDeskNow(){const free=DESKS.filter(s=>!s.occ&&!s.taken),all=free.length?free:DESKS.filter(s=>!s.taken),s=all[Math.floor(Math.random()*all.length)];s.taken=true;return s;}
-function spawnAtDesk(emp,s){const P=mkModel(emp.gender,emp.model);place(P,s[0],s[1],s[2]);P.role=s[3];P.kbd=.6;P.v='type';P.speed=2.6;const act={P,fn:aType};acts.push(act);return{P,act,seat:s,emp};}
+function spawnAtDesk(emp,s){const P=mkModel(emp.gender,emp.model,emp.look);place(P,s[0],s[1],s[2]);P.role=s[3];P.kbd=.6;P.v='type';P.speed=2.6;const act={P,fn:aType};acts.push(act);return{P,act,seat:s,emp};}
 function beginInvite(emps,game,table){
   panel.classList.add('folded');syncFold();
   const live=emps.filter(e=>NET.players.has(e.empId)),sims=emps.filter(e=>!NET.players.has(e.empId));
@@ -1410,7 +1642,7 @@ function enterGo(m,info){
     let o=old.find(x=>x.emp.empId===id);
     if(!o){const pi=m.pinfo[id];
       if(info.simIds.includes(id))o=spawnAtDesk(pi,pickDeskNow());
-      else{const r=NET.remote.get(id),P=mkModel(pi.gender,pi.model);if(r)place(P,r.x,r.z,r.yaw);else place(P,sp[i][0],sp[i][1],0);P.speed=2.6;o={P,seat:null,emp:pi,live:true};}}
+      else{const r=NET.remote.get(id),P=mkModel(pi.gender,pi.model,pi.look);if(r)place(P,r.x,r.z,r.yaw);else place(P,sp[i][0],sp[i][1],0);P.speed=2.6;o={P,seat:null,emp:pi,live:true};}}
     dropAct(o);o.idx=i;rest(o.P);o.P.root.position.set(o.P.x,0,o.P.z);o.P.speed=2.6;o.P.path=route(o.P.x,o.P.z,sp[i][0],sp[i][1]);o.done=false;m.opps.push(o);});
   for(const t of m.tips.slice())rmTip(t);
   m.auto=route(player.x,player.z,sp[m.meIdx][0],sp[m.meIdx][1]);m.arrived=false;m.state='walk';m.t=0;}
@@ -1767,7 +1999,8 @@ function updMHud(m){const el=Math.floor(simElapsed(m)),mm=Math.floor(el/60),ss=S
   byId('mhC').textContent='সময় '+bnd(mm)+':'+bnd(ss);}
 function matchCam(dt){const m=MT,k=Math.min(1,dt*2.2);camera.position.lerp(m.camPos,k);m.look.lerp(m.camTo,k);camera.lookAt(m.look);}
 // the player's own steps while the game walks them somewhere (called from updateWalk)
-function autoStep(P,dt){const m=MT;if(!m||!m.auto)return[0,0];const tg=m.auto[0];if(!tg){m.auto=null;m.arrived=true;return[0,0];}
+function autoStep(P,dt){return autoWalk(P,dt,MT);}
+function autoWalk(P,dt,m){if(!m||!m.auto)return[0,0];const tg=m.auto[0];if(!tg){m.auto=null;m.arrived=true;return[0,0];}
   const dx=tg[0]-P.x,dz=tg[1]-P.z,d=Math.hypot(dx,dz);if(d<.12){m.auto.shift();m.lastD=undefined;if(!m.auto.length){m.auto=null;m.arrived=true;}return[0,0];}
   if(m.lastD===undefined||d<m.lastD-.01){m.lastD=d;m.stuck=0;}else m.stuck+=dt;
   if(m.stuck>.7){P.x=tg[0];P.z=tg[1];m.auto.shift();m.lastD=undefined;m.stuck=0;if(!m.auto.length){m.auto=null;m.arrived=true;}return[0,0];}   // snagged on something: hop to the waypoint
@@ -1816,7 +2049,7 @@ async function showResult(r){const m=MT,me=PROFILE.empId,n=r.order.length,place=
     xp.textContent=gd.em+' '+gd.bn+' রেটিং '+bnd(d.rating.before)+' → '+bnd(d.rating.after)+' ('+(dl>=0?'+':'−')+bnd(Math.abs(dl))+') · XP '+(d.xpDelta>=0?'+':'−')+bnd(Math.abs(d.xpDelta))+' · মোট '+bnd(d.xp);}
   catch(e){xp.textContent=(e&&e.message)||'রেটিং সেভ হয়নি। নেটওয়ার্ক দেখুন।';}
   byId('rAgain').disabled=false;byId('rOk').disabled=false;}
-function endMatch(again){const m=MT;if(!m)return;if(PROFILE)setPlayerModel(PROFILE.gender,PROFILE.model);byId('mres').hidden=true;byId('mhud').hidden=true;byId('turnui').hidden=true;for(const t of m.tips.slice())rmTip(t);
+function endMatch(again){const m=MT;if(!m)return;if(PROFILE)setPlayerModel(PROFILE.gender,PROFILE.model,PROFILE.look);byId('mres').hidden=true;byId('mhud').hidden=true;byId('turnui').hidden=true;for(const t of m.tips.slice())rmTip(t);
   const dine=GAMEDEF[m.game].dine;
   if(m.game==='pool')endPool(m);else if(m.game==='carrom')endCarrom(m);else endDining(m);
   let tx,tz,f;
@@ -1921,6 +2154,7 @@ function bossUpdate(t,dt){
   const P=bossPerson(plan.id),B=BOSSES[plan.id];
   if(BS.cue)BS.cue.visible=false;
   bossFlee(off,plan);
+  if(CMP.on&&CMP.kind==='trouble'&&CMP.boss===plan.id){P.root.visible=true;troubleEscort(P,dt,t);bossTag(plan.id,P,true,'<b class="shout">'+(CMP.stage==='speak'?'এত বড় সাহস?! 😡':'আমার সাথে চলো! 😡')+'</b>');return;}
   if(CHASE.on&&CHASE.slot===k){chaseUpdate(P,plan,dt,t);return;}
   const st=bossShape(plan,off);
   if(!st){P.root.visible=false;if(BS.cue)BS.cue.visible=false;bossTag(plan.id,P,false);return;}
@@ -1936,8 +2170,6 @@ function bossUpdate(t,dt){
   bossTag(plan.id,P,true,shouting?'<b class="shout">কাজ কাম নাই?! 😡</b>':'<b>'+B.em+' '+B.bn+'</b><small>'+(st.stand?(plan.kind==='play'?'খেলছেন':plan.kind==='watch'?'খেলা দেখছেন':'পরিদর্শনে'):'অফিস ঘুরছেন')+'</small>');}
 
 /* ---- the chase ---- */
-function myDeskSpot(){let h=0;for(const c of PROFILE.empId)h=(h*31+c.charCodeAt(0))>>>0;
-  const free=DESKS.filter(s=>!s.occ),s=free[h%free.length],f0=Math.sin(s[2]),f1=Math.cos(s[2]);return{seat:s,stand:nearFree(s[0]-f0*.9,s[1]-f1*.9)};}
 function startChase(plan,k,B){panel.classList.add('folded');syncFold();const d=myDeskSpot();
   Object.assign(CHASE,{on:true,slot:k,boss:plan.id,t:0,desk:d,path:null,repath:0,wph:0,over:false});
   B.root.visible=true;const m=bossMark();m.visible=true;m.position.set(d.stand[0],0,d.stand[1]);
@@ -1984,11 +2216,15 @@ function myState(){
     else act='🤝 '+shortName(MT.emp.name)+' কে '+g.bn+' খেলতে ডাকছে';}
   else if(CHASE.on){}
   else if(!walk)act='👀 অফিস ঘুরে দেখছে';
-  const x=walk?player.x:0,zz=walk?player.z:0,L=NET.last,walking=!!L&&Math.hypot(x-L.x,zz-L.z)>.03;
-  return{x:+x.toFixed(2),z:+zz.toFixed(2),yaw:+(walk?player.yaw:0).toFixed(2),walking,inOffice:walk,pose,zone:z?z.id:'',act};}
+  if(SMOKE.on){pose='smoke';act=SMOKE.buddy?'🚬 '+SMOKE.buddy+' এর সাথে সিগারেট খাচ্ছে':'🚬 বারান্দায় সিগারেট খাচ্ছে';}
+  else if(EMO.id){pose='e:'+EMO.id;const e=EMOTES.find(q=>q.id===EMO.id);act=e.em+' '+e.bn+' করছে';}
+  else if(CMP.on&&CMP.kind==='trouble')act='😱 বসের হাতে ধরা পড়েছে!';
+  else if(CMP.on&&CMP.stage!=='done'&&CMP.kind!=='smokejoin')act='😭 এইচআরে অভিযোগ করতে যাচ্ছে';
+  const x=walk?player.x:0,zz=walk?player.z:0,L=NET.last,walking=!!L&&Math.hypot(x-L.x,zz-L.z)>.03,fx=performance.now()<FXS.until?FXS.cur:'';
+  return{x:+x.toFixed(2),z:+zz.toFixed(2),y:+((walk&&player.y)||0).toFixed(2),yaw:+(walk?player.yaw:0).toFixed(2),walking,inOffice:walk,pose,zone:z?z.id:'',act,fx};}
 async function sendPresence(){if(!NET.on||NET.busy)return;NET.busy=true;const s=myState();
   try{const r=await fetch('/api/presence',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(s)});const d=await r.json().catch(()=>null);
-    if(r.ok&&d&&d.ok){NET.last=s;applyPlayers(d.players);applyLive(d.live||[],d.serverNow||Date.now());}}
+    if(r.ok&&d&&d.ok){NET.last=s;applyPlayers(d.players);applyLive(d.live||[],d.serverNow||Date.now());applySlaps(d.slapped||[]);applyNotices(d.notices||[]);applySocialIn(d.socialIn||[]);applySocialOut(d.socialOut||[]);}}
   catch(e){/* offline for a moment: the next beat tries again */}
   NET.busy=false;}
 function startNet(){if(NET.on)return;NET.on=true;byId('whoBtn').hidden=false;sendPresence();
@@ -1998,9 +2234,11 @@ function applyPlayers(list){
   NET.players=new Map(list.map(p=>[p.empId,p]));
   byId('whoN').textContent=bnd(list.length);
   for(const p of list){if(!p.inOffice)continue;let r=NET.remote.get(p.empId);
-    if(!r){const P=mkModel(p.gender,p.model);place(P,p.x,p.z,p.yaw);r={P,x:p.x,z:p.z,yaw:p.yaw,tx:p.x,tz:p.z,tyaw:p.yaw,pose:p.pose,walking:false,wph:Math.random()*6,el:document.createElement('div'),p};
+    if(!r){const P=mkModel(p.gender,p.model,p.look);place(P,p.x,p.z,p.yaw);r={sig:p.model+'|'+JSON.stringify(p.look||{}),P,x:p.x,z:p.z,yaw:p.yaw,tx:p.x,tz:p.z,tyaw:p.yaw,yy:p.y||0,ty:p.y||0,lastFx:'',pose:p.pose,walking:false,wph:Math.random()*6,el:document.createElement('div'),p};
       r.el.className='bub on rtag';bubbleLayer().appendChild(r.el);NET.remote.set(p.empId,r);}
-    r.tx=p.x;r.tz=p.z;r.tyaw=p.yaw;r.pose=p.pose;r.p=p;r.walking=p.walking;
+    {const sig=p.model+'|'+JSON.stringify(p.look||{});if(r.sig!==sig){scene.remove(r.P.root);r.P=mkModel(p.gender,p.model,p.look);place(r.P,r.x,r.z,r.yaw);r.sig=sig;}}   // somebody changed their look
+    r.tx=p.x;r.tz=p.z;r.ty=p.y||0;r.tyaw=p.yaw;r.pose=p.pose;r.p=p;r.walking=p.walking;
+    if(!p.fx)r.lastFx='';else if(p.fx!==r.lastFx){r.lastFx=p.fx;if(p.fx.startsWith('slap')||p.fx.startsWith('kick')){r.slapT=0;r.kick=p.fx.startsWith('kick');}else if(p.fx.startsWith('hit'))r.hitT=.9;else if(p.fx.startsWith('offer'))r.offerT=0;}
     const act=p.act||('📍 '+zoneBn(p.zone));
     if(r.shown!==p.name+act){r.shown=p.name+act;r.el.textContent='';const b=document.createElement('b');b.textContent='🟢 '+(p.nickname||shortName(p.name));const s=document.createElement('small');s.textContent=act;r.el.append(b,s);}}
   for(const [id,r] of NET.remote){const p=NET.players.get(id);if(!p||!p.inOffice){scene.remove(r.P.root);r.el.remove();NET.remote.delete(id);}}
@@ -2011,10 +2249,17 @@ function remoteUpdate(dt,t){const w=stage.clientWidth,h=stage.clientHeight,maxD=
     const dx=r.tx-r.x,dz=r.tz-r.z,d=Math.hypot(dx,dz);
     if(d>6){r.x=r.tx;r.z=r.tz;}else{const k=Math.min(1,dt*5);r.x+=dx*k;r.z+=dz*k;}
     let dy=(d>.04?Math.atan2(dx,dz):r.tyaw)-r.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));const moving=d>.04||r.walking;
-    r.yaw+=dy*Math.min(1,dt*8);P.x=r.x;P.z=r.z;P.yaw=r.yaw;P.root.position.set(r.x,0,r.z);P.root.rotation.y=r.yaw;
+    r.yaw+=dy*Math.min(1,dt*8);r.yy+=((r.ty||0)-r.yy)*Math.min(1,dt*10);P.x=r.x;P.z=r.z;P.yaw=r.yaw;P.root.position.set(r.x,r.yy,r.z);P.root.rotation.y=r.yaw;
     if(r.pose==='sit')seatedPose(P,t,0,_vt.set(r.x,.8,r.z));
     else if(moving){r.wph+=dt*(d>.04?Math.min(d/dt,3.2):1.8)*4.6;rest(P);walkPose(P,r.wph,1);}
-    else rest(P);
+    else{rest(P);
+      if(r.pose==='smoke'){if(!P.cigTip)addCig(P);P.cigGroup.visible=true;aSmoke(P,t,dt);burnCig(P,(t%45)/45,t);}
+      else if(r.pose&&r.pose.startsWith('e:'))emotePose(P,r.pose.slice(2),t);}
+    if(r.pose!=='smoke'&&P.cigGroup&&!(r.offerT>=0))P.cigGroup.visible=false;
+    if(r.yy>.08&&r.pose!=='sit')airPose(P);
+    if(r.slapT>=0){r.slapT+=dt;(r.kick?kickPose:slapPose)(P,r.slapT/.45);if(r.slapT>.45)r.slapT=-1;}
+    if(r.hitT>0){r.hitT-=dt;staggerPose(P,Math.min(1,r.hitT/.9));}
+    if(r.offerT>=0){if(!P.cigTip)addCig(P);P.cigGroup.visible=true;r.offerT+=dt;offerPose(P,r.offerT/1.6);if(r.offerT>1.6)r.offerT=-1;}
     life(P,t,dt);
     // name tag over the head
     P.J.neck.getWorldPosition(_v);_v.y+=.3;const dist=camera.position.distanceTo(_v);_v.project(camera);
@@ -2049,7 +2294,7 @@ let PROFILE=null,profInit=false;
 function initProfile(emp){
   PROFILE=emp;const $=id=>document.getElementById(id);
   const pbtn=$('pbtn'),modal=$('pmodal'),view=$('pview'),form=$('pform'),msg=$('pmsg'),save=$('psave');
-  let av=emp.avatar,bg=emp.avatarBg,mdl=emp.model||0;
+  let av=emp.avatar,bg=emp.avatarBg,mdl=emp.model||0,lk=Object.assign({},emp.look||{});
   const paint=(el,a,c)=>{el.textContent=a;el.style.background=c;};
   const refresh=()=>{const p=PROFILE;paint(pbtn,p.avatar,p.avatarBg);paint($('pavBig'),p.avatar,p.avatarBg);
     $('ptitle').textContent=p.name;$('pnick').textContent=p.nickname?'“'+p.nickname+'”':'ডাকনাম এখনো দেননি';$('pbio').textContent=p.bio||'';$('pbio').hidden=!p.bio;
@@ -2058,22 +2303,46 @@ function initProfile(emp){
   const open=()=>{modal.hidden=false;showView();};
   const close=()=>{modal.hidden=true;};
   const showView=()=>{refresh();view.hidden=false;form.hidden=true;};
-  const mk=()=>{const A=$('pavs'),C=$('pcols'),Mo=$('pmods');A.textContent='';C.textContent='';Mo.textContent='';
+  const mkLook=()=>{const box=$('plook'),prev=$('plookPrev'),g=PROFILE.gender==='f'?'f':'m',eff=lookFix(g,modelOf(g,mdl).o,lk);box.textContent='';prev.textContent='';prev.appendChild(modelSvg(g,{o:eff}));
+    const set=(k,v)=>{if(v===undefined)delete lk[k];else lk[k]=v;mk();};
+    const sect=t=>{const h=document.createElement('div');h.className='lkh';h.textContent=t;box.appendChild(h);const r=document.createElement('div');r.className='lkrow';box.appendChild(r);return r;};
+    const sw=(t,list,key,cur)=>{const r=sect(t);for(const c of list){const b=document.createElement('button');b.type='button';b.className='lksw';b.style.background=c;b.setAttribute('aria-label','রং');b.setAttribute('aria-pressed',String(String(cur()||'').toLowerCase()===c.toLowerCase()));b.addEventListener('click',()=>set(key,c));r.appendChild(b);}};
+    const ch=(t,opts,pick,cur)=>{const r=sect(t);for(const [v,l] of opts){const b=document.createElement('button');b.type='button';b.className='lkch';b.textContent=l;b.setAttribute('aria-pressed',String(cur()===v));b.addEventListener('click',()=>pick(v));r.appendChild(b);}};
+    const yn=(t,key)=>ch(t,[[true,'হ্যাঁ'],[false,'না']],v=>set(key,v),()=>!!eff[key]);
+    sw('চামড়ার রং',SKIN_TONES,'skin',()=>eff.skin);
+    if(g==='f'){
+      ch('চুলের স্টাইল',[['long','খোলা চুল'],['bun','খোঁপা'],['hijab','হিজাব']],v=>set('hs',v),()=>eff.hs);
+      if(eff.hs==='hijab')sw('হিজাবের রং',HIJAB_COLS,'hijab',()=>eff.hijab);else sw('চুলের রং',HAIR_COLS,'hair',()=>eff.hair||'#141010');
+      sw('কামিজের রং',TOP_F,'top',()=>eff.top);
+      if(eff.hs!=='hijab'){ch('ওড়না',[[true,'আছে'],[false,'নেই']],v=>set('orna',v?(eff.orna||ORNA_COLS[0]):null),()=>!!eff.orna);if(eff.orna)sw('ওড়নার রং',ORNA_COLS,'orna',()=>eff.orna);}
+      sw('সালোয়ারের রং',BOT_F,'bot',()=>eff.bot);
+      yn('চশমা','glasses');yn('স্যান্ডেল','sandal');}
+    else{
+      ch('চুলের স্টাইল',[['short','ছোট চুল'],['bald','টাক']],v=>set('hs',v),()=>eff.hs||'short');
+      if(eff.hs!=='bald')sw('চুলের রং',HAIR_COLS,'hair',()=>eff.hair||'#16110e');
+      yn('চশমা','glasses');yn('দাড়ি','beard');yn('গোঁফ','mous');
+      ch('পোশাক',[['tee','টি-শার্ট'],['polo','পোলো'],['shirt','ফরমাল শার্ট']],v=>set('style',v),()=>eff.style||'tee');
+      ch('হাতা',[['short','হাফ হাতা'],['long','ফুল হাতা']],v=>set('sleeve',v),()=>eff.sleeve||'short');
+      sw('জামার রং',TOP_M,'top',()=>eff.top);
+      ch('প্যান্ট',[[true,'জিন্স'],[false,'ফরমাল প্যান্ট']],v=>set('jeans',v),()=>!!eff.jeans);
+      sw('প্যান্টের রং',BOT_M,'bot',()=>eff.bot);}};
+  const mk=()=>{const A=$('pavs'),C=$('pcols'),Mo=$('pmods');A.textContent='';C.textContent='';Mo.textContent='';mkLook();
     modelList(PROFILE.gender).forEach((m,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed',String(i===mdl));b.setAttribute('aria-label',m.n);b.appendChild(modelSvg(PROFILE.gender,m));const sm=document.createElement('small');sm.textContent=m.n;b.appendChild(sm);b.addEventListener('click',()=>{mdl=i;mk();});Mo.appendChild(b);});
     AVATARS.forEach(a=>{const b=document.createElement('button');b.type='button';b.textContent=a;b.setAttribute('aria-pressed',String(a===av));b.addEventListener('click',()=>{av=a;mk();});A.appendChild(b);});
     AV_BG.forEach(c=>{const b=document.createElement('button');b.type='button';b.style.background=c;b.setAttribute('aria-label','রং');b.setAttribute('aria-pressed',String(c===bg));b.addEventListener('click',()=>{bg=c;mk();});C.appendChild(b);});};
-  const edit=()=>{const p=PROFILE;av=p.avatar;bg=p.avatarBg;mdl=p.model||0;$('fNick').value=p.nickname;$('fBio').value=p.bio;$('fSnack').value=p.snack;$('fPhone').value=p.phone;msg.textContent='';msg.className='pmsg';mk();view.hidden=true;form.hidden=false;};
+  const edit=()=>{const p=PROFILE;av=p.avatar;bg=p.avatarBg;mdl=p.model||0;lk=Object.assign({},p.look||{});$('fNick').value=p.nickname;$('fBio').value=p.bio;$('fSnack').value=p.snack;$('fPhone').value=p.phone;msg.textContent='';msg.className='pmsg';mk();view.hidden=true;form.hidden=false;};
   if(!profInit){profInit=true;
+    $('plookReset').addEventListener('click',()=>{lk={};mk();});
     pbtn.addEventListener('click',open);$('pclose').addEventListener('click',close);$('pedit').addEventListener('click',edit);$('pcancel').addEventListener('click',showView);
     modal.addEventListener('click',e=>{if(e.target===modal)close();});
     addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden){e.stopPropagation();close();}},true);
     // typing in the form must not move the player
     modal.addEventListener('keydown',e=>e.stopPropagation());modal.addEventListener('keyup',e=>e.stopPropagation());
     form.addEventListener('submit',async e=>{e.preventDefault();save.disabled=true;msg.className='pmsg';msg.textContent='সেভ হচ্ছে…';
-      try{const r=await fetch('/api/profile',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nickname:$('fNick').value,bio:$('fBio').value,snack:$('fSnack').value,phone:$('fPhone').value,avatar:av,avatarBg:bg,model:mdl})});
+      try{const r=await fetch('/api/profile',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nickname:$('fNick').value,bio:$('fBio').value,snack:$('fSnack').value,phone:$('fPhone').value,avatar:av,avatarBg:bg,model:mdl,look:lk})});
         const d=await r.json().catch(()=>null);
         if(!r.ok||!d||!d.ok){msg.className='pmsg bad';msg.textContent=(d&&d.error)||'সেভ হয়নি। আবার চেষ্টা করুন।';sfx.play('fail');}
-        else{PROFILE=Object.assign(PROFILE,d.profile);if(!MT)setPlayerModel(PROFILE.gender,PROFILE.model);if(window.CB_PLAYER)window.CB_PLAYER.nickname=d.profile.nickname;sfx.play('ok');showView();toast('প্রোফাইল আপডেট হয়েছে!',2500);}}
+        else{PROFILE=Object.assign(PROFILE,d.profile);if(!MT)setPlayerModel(PROFILE.gender,PROFILE.model,PROFILE.look);if(window.CB_PLAYER)window.CB_PLAYER.nickname=d.profile.nickname;sfx.play('ok');showView();toast('প্রোফাইল আপডেট হয়েছে!',2500);}}
       catch(err){msg.className='pmsg bad';msg.textContent='নেটওয়ার্ক সমস্যা। আবার চেষ্টা করুন।';}
       save.disabled=false;});}
   refresh();pbtn.hidden=false;
@@ -2096,7 +2365,7 @@ function start(){
     for(const v of traffic){const px0=v.g.position.x,nx=((v.x0+v.dir*v.speed*tt+58)%116+116)%116-58;v.g.position.x=nx;if(onBal&&(px0-player.x)*(nx-player.x)<0&&Math.abs(nx-px0)<5)sfx.vehicle(Math.max(.3,Math.min(1,1.3-Math.abs(v.g.position.z-player.z)/22)),v.kind);}
     updSmoke(dt);gateUpdate(tt,dt);
     if(MT&&(MT.state==='play'||MT.state==='result')){}else if(mode==='walk')updateWalk(tt,dt);else{updFly(dt);controls.update();}
-    clockTick(dt);matchUpdate(dt);retUpdate(dt);remoteUpdate(dt,tt);bossUpdate(tt,dt);
+    clockTick(dt);matchUpdate(dt);retUpdate(dt);remoteUpdate(dt,tt);bossUpdate(tt,dt);cmpUpdate(dt);hitUpdate(dt);tbUpdate(dt);
     updateLabels();updateTalk(dt);renderer.render(scene,camera);requestAnimationFrame(frame);}
   updBoard();requestAnimationFrame(frame);
 }

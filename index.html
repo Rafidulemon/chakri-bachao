@@ -96,6 +96,10 @@
    <h2>প্রোফাইল এডিট</h2>
    <label>ক্যারেক্টার মডেল (গেমে আপনার চেহারা)</label>
    <div class="pmods" id="pmods"></div>
+   <label>আপনার চেহারা কাস্টমাইজ করুন</label>
+   <div class="plookprev" id="plookPrev"></div>
+   <div id="plook"></div>
+   <button type="button" class="pghost plookreset" id="plookReset">প্রিসেটে ফিরে যান</button>
    <label>অবতার</label>
    <div class="pavs" id="pavs"></div>
    <label>অবতারের ব্যাকগ্রাউন্ড</label>
@@ -152,6 +156,10 @@
  </div>
 </div>
 <div class="turnui" id="turnui" hidden></div>
+<div class="flash" id="flash"></div>
+<button type="button" class="emobtn" id="emoBtn" aria-label="অ্যাকশন">🎭</button>
+<div class="emotes" id="emotes" hidden><div class="emohead"><b>🎭 মজার অ্যাকশন</b><button type="button" id="emoClose" aria-label="বন্ধ করুন">✕</button></div><div class="emolist" id="emoList"></div><small>Q চেপেও খোলা যায়। হাঁটলে বা লাফ দিলে থেমে যাবে।</small></div>
+<div class="pmodal" id="msmoke" hidden><div class="pcard mres"><div class="rbig">🚬</div><h2 id="smkT"></h2><p>বারান্দায় গিয়ে একসাথে এক টান দেবেন? (ধূমপান স্বাস্থ্যের জন্য ক্ষতিকর, তবে আড্ডা স্বাস্থ্যের জন্য ভালো)</p><div class="prow"><button type="button" class="pghost" id="smkNo">না ভাই, ছেড়ে দিয়েছি</button><button type="button" class="pgo" id="smkYes">আসছি! 🚬</button></div></div></div>
 <div class="chase" id="chase" hidden><b>🏃 দৌড় দাও! বস ধরতে আসছে!</b><span id="chaseD"></span></div>
 <div class="pmodal" id="mres" hidden>
  <div class="pcard mres" role="dialog" aria-modal="true">
@@ -168,6 +176,7 @@
   <div class="clk" id="hudClock"></div>
   <div class="keys" id="hudKeys"></div>
   <button class="act" id="hudAct" hidden></button>
+  <div class="actrow"><button class="act hurt" id="hudSlap" hidden>👋 চড় মারুন (F)</button><button class="act hurt" id="hudKick" hidden>🦵 লাথি মারুন (K)</button><button class="act inv" id="hudInvite" hidden></button></div>
 </div>
 <div class="joy" id="joy" hidden><div class="knob" id="knob"></div></div>
 <div class="mbtns" id="mbtns" hidden>
@@ -175,6 +184,7 @@
     <button type="button" class="mb" id="bLookL" aria-label="বাঁয়ে ঘুরুন">◀</button>
     <button type="button" class="mb" id="bLookR" aria-label="ডানে ঘুরুন">▶</button>
   </div>
+  <div class="mrow"><button type="button" class="mb" id="bJump" aria-label="লাফ">⤴<small>লাফ</small></button><button type="button" class="mb" id="bSlap" aria-label="চড়">👋<small>চড়</small></button><button type="button" class="mb" id="bKick" aria-label="লাথি">🦵<small>লাথি</small></button></div>
   <button type="button" class="mb wide" id="bRun" aria-pressed="false">দৌড়<small>Run</small></button>
   <button type="button" class="mb wide ghost" id="bExit">বের হন<small>Exit walk</small></button>
 </div>

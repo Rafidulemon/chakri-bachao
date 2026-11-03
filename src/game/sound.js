@@ -137,6 +137,12 @@ const SOUNDS = {
   btn: () => { tone(1000, 0.08, { type: 'square', vol: 0.1 }); tone(1000, 0.08, { type: 'square', vol: 0.1, at: 0.12 }); },
   door: () => { noise(0.7, { freq: 300, to: 1400, q: 2, type: 'bandpass', vol: 0.35 }); tone(110, 0.5, { type: 'sine', vol: 0.12, to: 70 }); },
   pop: () => tone(520, 0.1, { type: 'sine', vol: 0.15, to: 900 }),
+  slap: () => { noise(0.05, { freq: 2400, type: 'highpass', vol: 0.55 }); noise(0.12, { freq: 900, type: 'bandpass', q: 1.5, vol: 0.32, at: 0.005 }); thud(160, 0.09, 0.45); tone(1300, 0.04, { type: 'square', vol: 0.08, to: 500 }); },
+  kick: () => { noise(0.04, { freq: 1500, type: 'highpass', vol: 0.3 }); thud(95, 0.14, 0.7); noise(0.1, { freq: 400, vol: 0.25, at: 0.01 }); },
+  bonk: () => { thud(180, 0.1, 0.55); ring(520, 0.12, 0.25); tone(250, 0.18, { type: 'triangle', vol: 0.12, to: 120, at: 0.05 }); },
+  jump: () => tone(300, 0.16, { type: 'sine', vol: 0.14, to: 640 }),
+  land: () => thud(120, 0.06, 0.22),
+  lighter: () => { click(0.5); noise(0.25, { freq: 3000, type: 'highpass', vol: 0.07, at: 0.05 }); tone(2100, 0.03, { type: 'square', vol: 0.05, at: 0.02 }); },
 
   // Impact sounds are modelled the way real ones work: a very short click, then a few
   // fixed-pitch resonances that die away quickly (no pitch glide, which is what sounds like a beep).

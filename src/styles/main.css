@@ -304,3 +304,38 @@ body:not(.en) .lbl small,body:not(.en) .seg button small,body:not(.en) .hud .whe
 .ucard:not(:disabled):hover{transform:translateY(-6px)}
 .ucol{font:inherit;font-weight:700;font-size:13px;color:#fff;border:2px solid #fffdf7;border-radius:8px;padding:6px 10px;cursor:pointer}
 @media (max-width:640px){.turnui{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}.ucard{width:40px;height:60px;font-size:17px}}
+
+/* ---------- jump, slap, kick, smoke and the funny actions ---------- */
+.flash{position:fixed;inset:0;z-index:70;pointer-events:none;opacity:0;background:radial-gradient(circle,rgba(255,60,40,.05) 30%,rgba(220,30,20,.55) 100%)}
+.flash.on{animation:flashHit .55s ease-out}
+@keyframes flashHit{0%{opacity:1}100%{opacity:0}}
+.actrow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:6px}
+.actrow[hidden]{display:none}
+.act.hurt{background:#c0392b;color:#fff;border-color:#8b1d12}
+.act.inv{background:#e2622b;color:#fff;border-color:#a8401a}
+.act[hidden]{display:none}
+.emobtn{position:fixed;z-index:26;left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 14px);width:48px;height:48px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel);font-size:24px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);display:none}
+body.walking .emobtn{display:block}
+body.touchui .emobtn{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}
+.emotes{position:fixed;z-index:27;left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 72px);width:min(320px,calc(100% - 24px));background:var(--panel);color:var(--ink);border:1.5px solid var(--line);border-top:5px solid var(--tape);border-radius:12px;padding:8px 10px 10px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.emotes[hidden]{display:none}
+.emohead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.emohead button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:50%;width:28px;height:28px;cursor:pointer}
+.emolist{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.emo{font:inherit;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:10px;border:1.5px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.emo span{font-size:24px;line-height:1}
+.emo:hover{border-color:var(--ink)}
+.emotes small{display:block;margin-top:6px;color:var(--muted);font-size:11.5px}
+.mbtns .mrow .mb small{display:none}
+#msmoke{z-index:80}
+
+/* ---------- customise the character ---------- */
+.plookprev{width:96px;height:112px;margin:2px auto 8px;border:2px solid var(--line);border-radius:14px;background:var(--chip);padding:4px;box-sizing:border-box}
+.plookprev svg{width:100%;height:100%;display:block}
+.lkh{font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+.lkrow{display:flex;flex-wrap:wrap;gap:6px}
+.lksw{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.lkch{font:inherit;font-size:13px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.lksw[aria-pressed="true"],.lkch[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--tape)}
+.lkch[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.plookreset{margin-top:10px;width:100%}

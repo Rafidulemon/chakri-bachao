@@ -115,3 +115,40 @@ create table if not exists warnings (
 
 -- the shared move log for turn-based live games (ludo, uno): every player's choices, in order
 alter table live_matches add column if not exists moves jsonb not null default '[]';
+
+-- Slaps: the person slapped files a complaint with HR, and the slapper gets a show-cause letter and loses employment rating
+create table if not exists slaps (
+  id            bigserial primary key,
+  from_id       text not null references employees (emp_id),
+  to_id         text not null references employees (emp_id),
+  status        text not null default 'slapped',
+  delta         integer,
+  rating_before integer,
+  rating_after  integer,
+  delivered     boolean not null default false,
+  created_at    timestamptz not null default now(),
+  complained_at timestamptz
+);
+create index if not exists slaps_to_idx on slaps (to_id, created_at desc);
+create index if not exists slaps_from_idx on slaps (from_id, created_at desc);
+
+-- height and a short-lived effect (slap, hit) so others see jumps and slaps
+alter table presence add column if not exists y real not null default 0;
+alter table presence add column if not exists fx text not null default '';
+
+-- what kind of hit it was (slap, kick, or a kick at the desk), and invitations between colleagues (a smoke on the balcony)
+alter table slaps add column if not exists kind text not null default 'slap';
+create table if not exists socials (
+  id         bigserial primary key,
+  from_id    text not null references employees (emp_id),
+  to_id      text not null references employees (emp_id),
+  kind       text not null default 'smoke',
+  status     text not null default 'sent',
+  seen       boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists socials_to_idx on socials (to_id, created_at desc);
+create index if not exists socials_from_idx on socials (from_id, created_at desc);
+
+-- how the character looks beyond the preset model: skin tone, hair, clothes, glasses... (JSON, checked by the server)
+alter table employees add column if not exists look text;
