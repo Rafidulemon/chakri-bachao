@@ -18,7 +18,7 @@ export async function POST(req: Request): Promise<Response> {
     return json({ ok: true });
   }
   if (!b) return json({ ok: false, error: 'ভুল অনুরোধ।' }, 400);
-  const pose = typeof b.pose === 'string' && /^(sit|type|smoke|stand)$/.test(b.pose) ? b.pose : 'stand';
+  const pose = typeof b.pose === 'string' && /^(sit|type|smoke|stand|act:[a-z]{3,8}~?)$/.test(b.pose) ? b.pose : 'stand';
   await sql`insert into presence (emp_id, x, z, y, yaw, walking, in_office, pose, zone, act, fx, bag, updated_at)
     values (${id}, ${num(b.x, 100)}, ${num(b.z, 100)}, ${num(b.y, 5)}, ${num(b.yaw, 10)}, ${b.walking === true}, ${b.inOffice === true}, ${pose}, ${txt(b.zone, 16)}, ${txt(b.act, 120)}, ${txt(b.fx, 24)}, ${b.bag === true}, now())
     on conflict (emp_id) do update set x = excluded.x, z = excluded.z, y = excluded.y, yaw = excluded.yaw, walking = excluded.walking, in_office = excluded.in_office,

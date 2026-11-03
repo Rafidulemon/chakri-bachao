@@ -184,6 +184,13 @@ const SOUNDS = {
     noise(0.3, { freq: 600, q: 0.8, type: 'bandpass', vol: 0.06, at: 0.08, to: 250 });
   },
   whoosh: () => { noise(0.17, { freq: 300, to: 2400, q: 1.4, type: 'bandpass', vol: 0.2 }); noise(0.14, { freq: 1200, to: 500, q: 0.9, type: 'bandpass', vol: 0.08, at: 0.1 }); },
+  sing: () => { [[330, 0], [392, .5], [440, 1], [392, 1.5], [523, 2], [440, 2.6], [392, 3.1], [330, 3.6]].forEach(([f, at], i) => voice(f, i % 2 ? 800 : 520, i % 2 ? 1200 : 900, i === 4 ? .7 : .42, { vol: .38, at, to0: f * .985, vib: 6, breath: .12 })); },
+  snore: () => { voice(75, 320, 620, .9, { vol: .5, to0: 58, breath: .8, vib: 3 }); noise(.8, { freq: 260, q: 1, vol: .22, at: .05 }); voice(60, 300, 560, .7, { vol: .4, at: 1.1, to0: 90, breath: .6 }); },
+  sip: () => { noise(.3, { freq: 1500, q: 2, type: 'bandpass', vol: .18, to: 700 }); tone(180, .12, { type: 'sine', vol: .15, at: .28, to: 120 }); },
+  pour: () => { noise(1.6, { freq: 1100, q: 1.5, type: 'bandpass', vol: .2, to: 1800 }); },
+  laugh: () => { for (let i = 0; i < 4; i++) voice(260 - i * 12, 700, 1100, .14, { vol: .4, at: i * .16, to0: 230 - i * 12, breath: .3 }); },
+  dance: () => { for (let i = 0; i < 4; i++) { tone(70, .16, { type: 'sine', vol: .5, at: i * .5, to: 42 }); noise(.05, { freq: 7000, q: 1, type: 'highpass', vol: .12, at: i * .5 + .25 }); } },
+  shutter: () => { noise(.05, { freq: 3500, q: 1, type: 'highpass', vol: .3 }); noise(.07, { freq: 2200, q: 1, type: 'highpass', vol: .25, at: .08 }); },
   ouch: () => { voice(310, 800, 1200, 0.36, { vol: 0.5, to0: 215, to1: 520, to2: 900 }); voice(260, 560, 1000, 0.22, { vol: 0.28, at: 0.3, to0: 170, breath: 0.12 }); },
   grunt: () => voice(120, 460, 820, 0.34, { vol: 0.62, to0: 88, to1: 380, to2: 700, breath: 0.55, vib: 7 }),
   gasp: () => noise(0.3, { freq: 600, to: 3200, q: 0.9, type: 'bandpass', vol: 0.32 }),

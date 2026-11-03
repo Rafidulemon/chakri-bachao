@@ -12,7 +12,7 @@ export async function POST(req: Request): Promise<Response> {
   const boss = typeof b?.boss === 'string' && b.boss in CUT ? b.boss : '';
   if (!boss) return json({ ok: false, error: 'ভুল অনুরোধ।' }, 400);
   const sql = db();
-  const recent = await sql`select 1 from warnings where emp_id = ${id} and created_at > now() - make_interval(secs => ${COOLDOWN_SECONDS})`;
+  const recent = await sql`select 1 from warnings where emp_id = ${id} and boss <> 'couple' and created_at > now() - make_interval(secs => ${COOLDOWN_SECONDS})`;
   if (recent[0]) return json({ ok: false, error: 'এইমাত্র একটা চিঠি পেয়েছেন, এবার রেটিং কাটা হলো না। ভাগ্য ভালো!' }, 429);
   const cur = await sql`select employment from employees where emp_id = ${id}`;
   if (!cur[0]) return json({ ok: false, error: 'আবার লগইন করুন।' }, 401);

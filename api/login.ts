@@ -1,6 +1,7 @@
 // POST /api/login  { email, empId }  -> checks the employee list, sets a 90-day cookie
+// GET  /api/login                    -> who is signed in on this browser (so a reload keeps you in)
 import { db } from './_lib/db.js';
-import { authCookie, json, normId } from './_lib/auth.js';
+import { authCookie, authedEmpId, json, normId } from './_lib/auth.js';
 import { DESK_COUNT, loadRatings, shape } from './_lib/profile.js';
 
 const BAD = 'ইমেইল বা এমপ্লয়ি আইডি মেলেনি। এইচআর আপাকে জিজ্ঞেস করুন।';
@@ -29,4 +30,13 @@ export async function POST(req: Request): Promise<Response> {
   }
   return json({ ok: true, serverNow: Date.now(), employee: shape(e as Record<string, string | null>, (await loadRatings(db(), [e.emp_id as string]))[e.emp_id as string]) },
     200, { 'set-cookie': authCookie(e.emp_id) });
+}
+
+export async function GET(req: Request): Promise<Response> {
+  const id = authedEmpId(req);
+  if (!id) return json({ ok: false }, 401);
+  const rows = await db()`select * from employees where emp_id = ${id}`;
+  const e = rows[0];
+  if (!e) return json({ ok: false }, 401);
+  return json({ ok: true, serverNow: Date.now(), employee: shape(e as Record<string, string | null>, (await loadRatings(db(), [e.emp_id as string]))[e.emp_id as string]) });
 }

@@ -1,6 +1,8 @@
 // POST /api/slap { action: 'slap', target }    -> you slapped a colleague who is online
 // POST /api/slap { action: 'complain', id }    -> the slapped colleague has filed the complaint with HR: the slapper is cut
 // POST /api/slap { action: 'boss', boss, kind }    -> you hit the CEO, HR or your manager: very serious trouble
+// POST /api/slap { action: 'act', kind }      -> you were caught smoking in the wrong place, sleeping, singing or watching a movie: a small cut and an apology letter
+// POST /api/slap { action: 'couple', kind }   -> you chased off the couple flirting on the stairs: HR is delighted and the rating goes UP
 // POST /api/slap { action: 'npc' }             -> you slapped a simulated colleague: HR sends you a (smaller) show-cause too
 import { db } from './_lib/db.js';
 import { authedEmpId, json } from './_lib/auth.js';
@@ -8,6 +10,9 @@ import { ONLINE_SECONDS } from './_lib/profile.js';
 
 const CUT_USER: Record<string, number> = { slap: 15, kick: 12, desk: 10 };
 const CUT_NPC: Record<string, number> = { slap: 8, kick: 6, desk: 5 };
+const CUT_ACT: Record<string, number> = { smoke: 6, sleep: 4, sing: 3, movie: 5 };   // smoking outside the balcony and stairs, sleeping, singing, a boss watching a movie
+const GAIN_COUPLE: Record<string, number> = { slap: 6, kick: 5 };
+const EMPLOYMENT_MAX = 120;
 const CUT_BOSS: Record<string, number> = { ceo: 40, hr: 30, mgr: 25 };   // hitting a superior is serious
 const XP_BOSS = 40;
 const CUT_DEFY = 5;   // refusing to apologise after a show-cause letter
@@ -49,7 +54,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   if (b.action === 'defy') {
-    const letter = await sql`select 1 from warnings where emp_id = ${me} and boss <> 'defy' and created_at > now() - interval '3 minutes'`;
+    const letter = await sql`select 1 from warnings where emp_id = ${me} and boss not in ('defy', 'couple') and created_at > now() - interval '3 minutes'`;
     if (!letter[0]) return json({ ok: false, error: 'এখন ক্ষমা না চাওয়ার মতো কোনো চিঠি নেই।' }, 404);
     const again = await sql`select 1 from warnings where emp_id = ${me} and boss = 'defy' and created_at > now() - interval '3 minutes'`;
     if (again[0]) return json({ ok: false, error: 'একবার জেদ দেখানোই যথেষ্ট!' }, 429);
@@ -73,6 +78,33 @@ export async function POST(req: Request): Promise<Response> {
     const after = Number(upd[0].employment);
     await sql`insert into warnings (emp_id, boss, delta) values (${me}, 'trouble', ${before - after})`;
     return json({ ok: true, before, employment: after, delta: before - after, xp: Number(upd[0].xp) });
+  }
+
+  if (b.action === 'act') {
+    const cut = CUT_ACT[String(b.kind)];
+    if (!cut) return json({ ok: false, error: 'ভুল অনুরোধ।' }, 400);
+    const recent = await sql`select 1 from warnings where emp_id = ${me} and boss = 'actpen' and created_at > now() - interval '20 seconds'`;
+    if (recent[0]) return json({ ok: false, error: 'এইচআর আপা এখনও আগের চিঠিটা লিখছেন, একটু সবুর করুন।' }, 429);
+    const cur = await sql`select employment from employees where emp_id = ${me}`;
+    if (!cur[0]) return json({ ok: false, error: 'আবার লগইন করুন।' }, 401);
+    const before = Number(cur[0].employment);
+    const upd = await sql`update employees set employment = greatest(0, employment - ${cut}) where emp_id = ${me} returning employment`;
+    const after = Number(upd[0].employment);
+    await sql`insert into warnings (emp_id, boss, delta) values (${me}, 'actpen', ${before - after})`;
+    return json({ ok: true, before, employment: after, delta: before - after });
+  }
+
+  if (b.action === 'couple') {
+    const recent = await sql`select 1 from warnings where emp_id = ${me} and boss = 'couple' and created_at > now() - interval '25 seconds'`;
+    if (recent[0]) return json({ ok: false, error: 'এইচআর আপা এখনও আগের প্রশংসাপত্র লিখছেন, একটু সবুর করুন।' }, 429);
+    const cur = await sql`select employment from employees where emp_id = ${me}`;
+    if (!cur[0]) return json({ ok: false, error: 'আবার লগইন করুন।' }, 401);
+    const before = Number(cur[0].employment);
+    const gain = GAIN_COUPLE[b.kind === 'kick' ? 'kick' : 'slap'];
+    const upd = await sql`update employees set employment = least(${EMPLOYMENT_MAX}, employment + ${gain}) where emp_id = ${me} returning employment`;
+    const after = Number(upd[0].employment);
+    await sql`insert into warnings (emp_id, boss, delta) values (${me}, 'couple', 0)`;
+    return json({ ok: true, before, employment: after, delta: after - before });
   }
 
   if (b.action === 'npc') {

@@ -463,16 +463,20 @@ function tsnd(Tb,name,v){if(CATCH)return;const d=Math.hypot(camera.position.x-Tb
 function stepDiscs(Tb,dt){const n=6,h=dt/n,B=Tb.balls;
   for(let s=0;s<n;s++){
     for(const b of B){if(!b.on)continue;const v=Math.hypot(b.vx,b.vz);
-      if(v>0){const nv=v-Tb.decel*h-Tb.drag*v*h;if(nv<.006){b.vx=b.vz=0;}else{b.vx*=nv/v;b.vz*=nv/v;}}
-      b.x+=b.vx*h;b.z+=b.vz*h;const sp0=Math.hypot(b.vx,b.vz);let wl=false;
-      if(b.x>Tb.hx-b.r){b.x=Tb.hx-b.r;b.vx=-Math.abs(b.vx)*Tb.cr;wl=true;}if(b.x<-Tb.hx+b.r){b.x=-Tb.hx+b.r;b.vx=Math.abs(b.vx)*Tb.cr;wl=true;}
-      if(b.z>Tb.hz-b.r){b.z=Tb.hz-b.r;b.vz=-Math.abs(b.vz)*Tb.cr;wl=true;}if(b.z<-Tb.hz+b.r){b.z=-Tb.hz+b.r;b.vz=Math.abs(b.vz)*Tb.cr;wl=true;}
+      if(v>0){const nv=v-Tb.decel*h-Tb.drag*v*h;if(nv<.006){b.vx=b.vz=0;b.fs=b.es=0;}else{b.vx*=nv/v;b.vz*=nv/v;}}
+      b.x+=b.vx*h;b.z+=b.vz*h;const sp0=Math.hypot(b.vx,b.vz);let wl=false,wx=0,wz=0;
+      if(b.x>Tb.hx-b.r){b.x=Tb.hx-b.r;b.vx=-Math.abs(b.vx)*Tb.cr;wl=true;wx=1;}if(b.x<-Tb.hx+b.r){b.x=-Tb.hx+b.r;b.vx=Math.abs(b.vx)*Tb.cr;wl=true;wx=1;}
+      if(b.z>Tb.hz-b.r){b.z=Tb.hz-b.r;b.vz=-Math.abs(b.vz)*Tb.cr;wl=true;wz=1;}if(b.z<-Tb.hz+b.r){b.z=-Tb.hz+b.r;b.vz=Math.abs(b.vz)*Tb.cr;wl=true;wz=1;}
+      if(wl&&Tb.firstHit)Tb.rail=true;
+      if(wl&&b.es){const k=b.es*.18*sp0;if(wx)b.vz-=k*b.rz;if(wz)b.vx-=k*b.rx;b.es*=.5;}   // side spin kicks the ball along the cushion
       if(wl&&sp0>.08&&performance.now()>(Tb.hush||0))tsnd(Tb,'Wall',Math.min(1,.2+sp0/(Tb.snd==='pool'?3:1.5)));
       for(const p of Tb.pockets){if((b.x-p[0])*(b.x-p[0])+(b.z-p[1])*(b.z-p[1])<p[2]*p[2]){b.on=false;b.vx=b.vz=0;b.mesh.visible=false;Tb.potted.push(b);tsnd(Tb,'Pocket',1);break;}}}
     for(let i=0;i<B.length;i++){const a=B[i];if(!a.on)continue;for(let j=i+1;j<B.length;j++){const b=B[j];if(!b.on)continue;
       const dx=b.x-a.x,dz=b.z-a.z,rr=a.r+b.r,d2=dx*dx+dz*dz;if(d2>=rr*rr||d2<1e-12)continue;const d=Math.sqrt(d2),nx=dx/d,nz=dz/d,ov=rr-d,ia=1/a.m,ib=1/b.m;
       a.x-=nx*ov*ia/(ia+ib);a.z-=nz*ov*ia/(ia+ib);b.x+=nx*ov*ib/(ia+ib);b.z+=nz*ov*ib/(ia+ib);
-      const rel=(a.vx-b.vx)*nx+(a.vz-b.vz)*nz;if(rel>0){if(rel>.04&&performance.now()>(Tb.hush||0))tsnd(Tb,(a.striker||b.striker)?'Strike':'Hit',Math.min(1,.2+rel/(Tb.snd==='pool'?3:1.5)));if(Tb.firstHit===null&&(a.cue||b.cue))Tb.firstHit=a.cue?b:a;const jj=(1+Tb.e)*rel/(ia+ib);a.vx-=jj*nx*ia;a.vz-=jj*nz*ia;b.vx+=jj*nx*ib;b.vz+=jj*nz*ib;}}}}}
+      const rel=(a.vx-b.vx)*nx+(a.vz-b.vz)*nz;if(rel>0){if(rel>.04&&performance.now()>(Tb.hush||0))tsnd(Tb,(a.striker||b.striker)?'Strike':'Hit',Math.min(1,.2+rel/(Tb.snd==='pool'?3:1.5)));if(Tb.firstHit===null&&(a.cue||b.cue))Tb.firstHit=a.cue?b:a;const cq=a.cue?a:b.cue?b:null;const jj=(1+Tb.e)*rel/(ia+ib);a.vx-=jj*nx*ia;a.vz-=jj*nz*ia;b.vx+=jj*nx*ib;b.vz+=jj*nz*ib;
+        if(cq&&cq.fs){cq.vx+=cq.dx*cq.fs;cq.vz+=cq.dz*cq.fs;cq.fs=0;}   // follow pushes the cue ball on, draw pulls it back
+        if(cq&&cq.es){const th=cq.es*.12*rel,o=cq===a?b:a;o.vx+=cq.rx*th*(o===b?1:1);o.vz+=cq.rz*th;cq.es*=.6;}}}}}}
 function moving(Tb){return Tb.balls.some(b=>b.on&&(b.vx||b.vz));}
 function standDist(Tb,cx,cz,dx,dz,ax,az){let t=1e9;if(Math.abs(dx)>1e-6){const tx=((-dx>0?ax:-ax)-cx)/(-dx);if(tx>0)t=Math.min(t,tx);}if(Math.abs(dz)>1e-6){const tz=((-dz>0?az:-az)-cz)/(-dz);if(tz>0)t=Math.min(t,tz);}return t;}
 function rectParam(x,z,ax,az){const px=clamp(x,-ax,ax),pz=clamp(z,-az,az);const dR=ax-px,dL=px+ax,dB=az-pz,dT=pz+az,m=Math.min(dR,dL,dB,dT);
@@ -484,6 +488,9 @@ function perimPath(cx,cz,ax,az,from,to){const f=[from[0]-cx,from[1]-cz],t=[to[0]
 
 /* ================= build the office ================= */
 const PRES=[-10.6,3.8];
+const COUPLE=[],CP={busy:false,until:0,say:3};   // the couple on the stairs
+const STAIR={x0:5.0,run:.35,drop:.15,n:12,extra:.3};   // the stairs go down from x0, a step every 'run' metres, to a landing 1.8 m below the floor
+const stairH=(x,z)=>(x<STAIR.x0||x>13.1||z<-15.9||z>-13.5)?0:(i=>-Math.min(STAIR.n,i)*STAIR.drop-(i>STAIR.n?STAIR.extra:0))(Math.floor((x-STAIR.x0)/STAIR.run)+1);
 const ZONES=[
   {id:'work',bn:'ওয়ার্কস্পেস',en:'Workspace',what:'আয়তাকার অফিসের মাঝখানে, আগের আড়াই গুণ বড়। সফটওয়্যার ইঞ্জিনিয়ারদের ল্যাপটপে Claude আর মনিটরে VS Code, QA দের Excel বাগ লিস্ট আর ব্রাউজার, ডিজাইনারদের Excel আর Figma।',r:[-12.5,14.75,-13.5,.4],c:[1,-6.8],sp:[1,-12.5]},
   {id:'w2',bn:'ওয়ার্কস্পেস',en:'Workspace',r:[-16,18,-13.5,7.5],hide:true},
@@ -496,6 +503,7 @@ const ZONES=[
   {id:'dine',bn:'ডাইনিং',en:'Dining',what:'ডান দিকে ওয়াশরুমের নিচে, লম্বালম্বি। বাঁ পাশের দরজা ওয়ার্কস্পেসের মাঝের হাঁটার পথের সাথে এক লাইনে। ৬টা টেবিল, প্রতিটায় ৪টা বসার জায়গা, মাথার দিকে কিচেন কাউন্টার।',r:[14.75,18,-10.5,.5],c:[16.4,-4.5],sp:[14.2,-6.75]},
   {id:'hr',bn:'এইচআর রুম',en:'HR room',what:'নিচের ডান কোণে, ডাইনিংয়ের ঠিক নিচে। দুটো ঘোরানো টেবিলে দুজন এইচআর, প্রত্যেকের একটা মনিটরে Excel, সামনে একজন করে কর্মী বসে।',r:[14.75,18,.5,7.5],c:[16.4,4],sp:[14.2,4]},
   {id:'bal',bn:'বারান্দা',en:'Balcony',what:'গেমিং রুম থেকে এইচআর রুম পর্যন্ত লম্বা ঢাকা বারান্দা। তিনজন দাঁড়িয়ে সিগারেট, তিনজন বেতের চেয়ারে চা, দুজন প্ল্যান্টারের কিনারায় আর দুজন মেঝেতে বসে সিগারেট।',r:[-6.2,18.3,7.5,10.1],c:[6,8.7],sp:[2.5,8.5]},
+  {id:'stairs',bn:'সিঁড়ি',en:'Stairs',what:'মেইন গেটের লিফট-লবির ডান পাশের সিঁড়ি নিচে নেমে গেছে। নিচের ল্যান্ডিংয়ে একটা জুটি গা ঘেঁষে বসে গুনগুন করে।',r:[3.7,13.1,-15.9,-13.5],c:[7.1,-14.5],sp:[4.1,-14.6],hide:true},
   {id:'gate',bn:'মেইন গেট ও লিফট',en:'Main gate',what:'উপরের দেয়ালের ঠিক মাঝখানে, ঝাপসা কাচের বন্ধ দরজা। ভেতরে দরজার পাশে এক্সিট বাটন, বাইরে ফেস স্ক্যানার। হেঁটে দেখুন মোডে কাছে গিয়ে E চাপুন।',r:[-1.7,3.7,-15.9,-13.5],c:[1,-14.7],sp:[1,-14.2]}
 ];
 // random numbers the pool and carrom controllers use. A live match swaps in a seeded one so both players see the same game.
@@ -517,9 +525,26 @@ function build(){
   bx(null,WX+.3,.3,WZ+.3,CX,-.3,CZ,'#b9b4aa');bx(null,WX,12,WZ,CX,GY,CZ,'#cfc9bd');
   for(let f=0;f<4;f++){bx(null,.04,1.3,WZ-1,X1+.02,GY+1+f*3,CZ,'#4f6070',{cast:false});bx(null,WX-1,1.3,.04,CX,GY+1+f*3,Z1+.02,'#4f6070',{cast:false});bx(null,WX-1,1.3,.04,CX,GY+1+f*3,Z0-.02,'#4f6070',{cast:false});bx(null,.04,1.3,WZ-1,X0-.02,GY+1+f*3,CZ,'#4f6070',{cast:false});}
   bx(null,5.4,.3,2.4,1,-.3,Z0-1.2,'#b9b4aa');floor(-1.7,3.7,Z0-2.4,Z0,TX.marble,2,null,.004,.3);
-  bx(wallsG,5.4,H,.12,1,0,Z0-2.4,wallM);addCol(-1.8,3.8,Z0-2.5,Z0-2.34);addCol(-1.82,-1.7,Z0-2.4,Z0);addCol(3.7,3.82,Z0-2.4,Z0);
+  bx(wallsG,5.4,H,.12,1,0,Z0-2.4,wallM);addCol(-1.8,3.8,Z0-2.5,Z0-2.34);addCol(-1.82,-1.7,Z0-2.4,Z0);
   for(const x of [0,2]){bx(wallsG,1.05,2.3,.05,x,0,Z0-2.32,'#2a2d31');bx(wallsG,.47,2.1,.03,x-.24,0,Z0-2.29,mat('#aeb5bd',.25,.7),{cast:false});bx(wallsG,.47,2.1,.03,x+.24,0,Z0-2.29,mat('#aeb5bd',.25,.7),{cast:false});}
   {const P=mkWoman();place(P,1,Z0-1.4,Math.PI);P.v='scroll';addPhone(P);acts.push({P,fn:aScroll});addCol(.75,1.25,Z0-1.65,Z0-1.15);}
+  /* ---------- the fire stairs next to the lift lobby: they go DOWN to a landing where a couple sits and flirts ---------- */
+  {const ST=STAIR,zc=Z0-1.2,XE=13.1,TOP=H+2.6;
+    bx(null,ST.x0-3.7,.3,2.4,(3.7+ST.x0)/2,-.3,zc,'#b9b4aa');floor(3.7,ST.x0,Z0-2.4,Z0,TX.marble,2,null,.004,.3);
+    bx(wallsG,XE-3.7,TOP,.12,(3.7+XE)/2,-2.6,Z0-2.4,wallM);addCol(3.7,XE,Z0-2.5,Z0-2.34);
+    bx(wallsG,.12,TOP,2.4,XE,-2.6,zc,wallM);addCol(XE-.05,XE+.07,Z0-2.4,Z0);
+    addCol(3.7,XE+.1,Z0-.02,Z0+.12);
+    for(let n=1;n<=ST.n;n++){const top=-n*ST.drop;bx(null,ST.run,top+2.1,2.28,ST.x0+(n-.5)*ST.run,-2.1,zc,n%2?'#c9c4b8':'#b8b3a6');}
+    const lx=ST.x0+ST.n*ST.run;
+    bx(null,XE-lx,.3,2.28,(lx+XE)/2,-2.4,zc,'#b9b4aa');floor(lx,XE,Z0-2.4,Z0,TX.marble,2,null,-2.095,.3);   // one more step down: the landing is lower than the last stair
+    bx(null,.05,2.0,.9,XE-.06,-2.1,zc,'#2f6b3a',{cast:false});bx(null,.04,.2,.5,XE-.06,-.1,zc,'#1f9d55',{cast:false});
+    const tx=canvasTex(512,128,(c,w,h)=>{c.fillStyle='#1d6b3c';c.fillRect(0,0,w,h);c.fillStyle='#fff';c.font='bold 54px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('⬇ সিঁড়ি · Stairs',w/2,h/2+3);});
+    plane(null,1.9,.48,4.6,2.35,Z0-2.33,new THREE.MeshBasicMaterial({map:tx}),0,0);
+    const man=mkMan({style:'shirt',top:'#2f4f7a',bot:'#23252b',hs:'short',hair:'#1c1c1c',h:.9}),wom=mkWoman({top:'#c2456b',glasses:false,hs:'bun',sandal:true});
+    // they sit on the last stair, feet on the lower landing, looking down the stairwell
+    place(man,8.98,-14.7,Math.PI/2);place(wom,8.98,-15.4,Math.PI/2);for(const q of [man,wom]){q.root.position.y=-2.1;q.y=-2.1;q.seatH=.3;q.root.visible=false;}
+    man.side=1;wom.side=-1;man.couple=wom.couple=true;COUPLE.push(man,wom);
+    acts.push({P:man,fn:aCouple},{P:wom,fn:aCouple});}
 
   /* ---------- floors ---------- */
   floor(-12.5,DXL,Z0,.4,TX.tile,1.2,null,.004,.14);floor(X0,-12.5,-5.7,.3,TX.dwood,2,'#e8dccb',.004,.45);floor(-11.5,5.2,.4,2.5,TX.tile,1.2,null,.004,.14);
@@ -908,6 +933,16 @@ function aStir(P,t){rest(P);const J=P.J;J.spine.rotation.x=.2;J.neck.rotation.x=
   J.lSh.rotation.set(-.85,0,-.1);J.lEl.rotation.x=-.45;J.neck.rotation.y=Math.sin(t*.2)*.2;}
 function aWatchSofa(P,t){rest(P);sit(P,.42);const J=P.J;J.spine.rotation.x=-.18;J.neck.rotation.set(.1,Math.sin(t*.25)*.5+.2,0);J.lSh.rotation.set(-.4,0,-.05);J.lEl.rotation.x=-.8;J.rSh.rotation.set(-.4,0,.05);J.rEl.rotation.x=-.8;
   J.lHip.rotation.y=-.25;J.lKn.rotation.x-=.2;}
+// the couple on the stairs: heads together, giggling, a hand in her hair
+const FLIRT_M=['তোমার হাসিতে আমার ল্যাপটপের ব্যাটারি ফুল হয়ে যায়! 😍','তুমি আমার কোডের মতো, যত দেখি তত বুঝি না, কিন্তু ভালো লাগে!','ডিনারে যাবে? বিল তোমার, আমার তো ইনক্রিমেন্ট নেই।','তোমাকে দেখলেই আমার ডেডলাইন ভুলে যাই 💕'];
+const FLIRT_W=['ইশ, আস্তে বলো, অফিসের দেয়ালেরও কান আছে! 🙈','তুমি না একদম ওয়াইফাইয়ের মতো, কাছে এলেই সিগন্যাল ফুল!','এইচআর দেখলে কিন্তু রিপোর্ট হয়ে যাবে!','আজ লাঞ্চ ব্রেকে আবার এখানে, ঠিক আছে? 💕'];
+function aCouple(P,t,dt){rest(P);sit(P,P.seatH||.46);const J=P.J,sd=P.side,sw=Math.sin(t*.9+P.ph);
+  J.spine.rotation.x=.1;J.spine.rotation.z=-sd*(.1+sw*.03);J.neck.rotation.set(.05,sd*(.55+sw*.08),0);J.hips.rotation.z=sw*.02;
+  if(sd>0){J.lSh.rotation.set(-.2,0,-1.25);J.lEl.rotation.x=-.4;J.rSh.rotation.set(-.5,0,.1);J.rEl.rotation.x=-1.1;}
+  else{J.rSh.rotation.set(-2.3+Math.sin(t*3)*.08,0,-.25);J.rEl.rotation.x=-1.9;J.lSh.rotation.set(-.5,0,-.1);J.lEl.rotation.x=-1.1;}
+  talk(P,t,Math.sin(t*1.7+P.ph)>.1);
+  if(sd>0&&!CP.busy&&P.root.visible){CP.say-=dt;if(CP.say<=0){CP.say=6+Math.random()*4;const near=Math.hypot(player.x-P.x,player.z-P.z)<9,w=COUPLE[1],a=Math.random()<.5;
+    if(near)tmpBubble(a?P:w,(a?FLIRT_M:FLIRT_W)[Math.floor(Math.random()*4)],3.2);}}}
 function aWalker(P,t,dt){if(!P.path||!P.path.length){P.dirF=!P.dirF;P.path=(P.dirF?P.path0.slice():P.path0.slice().reverse());}
   moveAlong(P,dt);const J=P.J;if(P.tray){J.lSh.rotation.set(-.55,0,-.25);J.lEl.rotation.x=-1.3;J.rSh.rotation.set(-.55,0,.25);J.rEl.rotation.x=-1.3;J.lHand.rotation.y=1.4;J.rHand.rotation.y=-1.4;}
   if(P.file){J.lSh.rotation.set(-.3,0,-.42);J.lEl.rotation.x=-1.75;}}
@@ -922,7 +957,7 @@ function segClear(T,x1,z1,x2,z2,skip,rad){const dx=x2-x1,dz=z2-z1,L=dx*dx+dz*dz;
 function shotFor(S,cx,cz,tg,p){const T=S.T,r=S.cue.r;let ux=p[0]-tg.x,uz=p[1]-tg.z;const ul=Math.hypot(ux,uz);ux/=ul;uz/=ul;
   const gx=tg.x-ux*2*r,gz=tg.z-uz*2*r;let ax=gx-cx,az=gz-cz;const al=Math.hypot(ax,az);if(al<.05)return null;ax/=al;az/=al;const cut=ax*ux+az*uz;if(cut<.35)return null;
   const clear=segClear(T,cx,cz,gx,gz,[S.cue,tg],2*r*.97)&&segClear(T,tg.x,tg.z,p[0],p[1],[tg,S.cue],2*r*.97);const st=standDist(T,cx,cz,ax,az,S.ax,S.az);
-  return{ax,az,sp:clamp(.8+(al+ul)*.95,1.0,3.2),s:(clear?1:-.7)+cut*.8-.1*(al+ul)-.25*Math.max(0,st-1.1)+SRP()*.12};}
+  return{ax,az,cut,sp:clamp(.8+(al+ul)*.95,1.0,3.2),s:(clear?1:-.7)+cut*.8-.1*(al+ul)-.25*Math.max(0,st-1.1)+SRP()*.12};}
 function poolPlan(){const S=POOL,T=S.T,cb=S.cue;
   if(S.breakNext){cb.on=true;cb.mesh.visible=true;cb.vx=cb.vz=0;cb.x=-T.hx/2;cb.z=(SRP()-.5)*.3;const ax=T.hx/2-cb.x,az=-cb.z,l=Math.hypot(ax,az);return{ax:ax/l,az:az/l,sp:6.6};}
   const tgs=legalTargets(S);
@@ -932,16 +967,19 @@ function poolPlan(){const S=POOL,T=S.T,cb=S.cue;
     if(best){cb.x=best.cx;cb.z=best.cz;}else{cb.x=-T.hx/2;cb.z=0;}cb.on=true;cb.mesh.visible=true;cb.vx=cb.vz=0;S.ballInHand=false;}
   let best=null;for(const tg of tgs)for(const p of T.pockets){const sh=shotFor(S,cb.x,cb.z,tg,p);if(sh&&(!best||sh.s>best.s))best=sh;}
   if(!best){const tg=tgs.reduce((a,b)=>Math.hypot(b.x-cb.x,b.z-cb.z)<Math.hypot(a.x-cb.x,a.z-cb.z)?b:a);let ax=tg.x-cb.x,az=tg.z-cb.z;const l=Math.hypot(ax,az)||1;best={ax:ax/l,az:az/l,sp:1.5};}
-  const n=(SRP()-.5)*.018,ca=Math.cos(n),sa=Math.sin(n);return{ax:best.ax*ca-best.az*sa,az:best.ax*sa+best.az*ca,sp:best.sp};}
+  const n=(SRP()-.5)*.018,ca=Math.cos(n),sa=Math.sin(n);
+  // the computer uses spin too: a stop or draw shot on straight pots, a touch of follow or side spin otherwise
+  const straight=best.cut>.96,vs=straight?(SRP()<.5?-.55:.45):(SRP()-.5)*.4,hs=(SRP()-.5)*.3;
+  return{ax:best.ax*ca-best.az*sa,az:best.ax*sa+best.az*ca,sp:best.sp,vs,hs};}
 function poolResolve(){const S=POOL,T=S.T,cb=S.cue,me=S.shooter,op=1-me,g=S.groups[me];
-  const pot=T.potted.filter(b=>!b.cue),scratch=!cb.on,eight=pot.some(b=>b.n===8),fh=T.firstHit;let foul=scratch||!fh,msg='';
+  const pot=T.potted.filter(b=>!b.cue),scratch=!cb.on,eight=pot.some(b=>b.n===8),fh=T.firstHit;let foul=scratch||!fh,msg='';if(!foul&&!pot.length&&!T.rail)foul=T.noRail=true;
   if(!foul&&!S.wasBreak){if(g){if(S.onEight){if(fh.n!==8)foul=true;}else if(fh.kind!==g)foul=true;}else if(fh.n===8)foul=true;}
   if(eight){if(S.wasBreak){const e=T.balls.find(b=>b.n===8);e.on=true;e.mesh.visible=true;e.vx=e.vz=0;e.x=T.hx/2;e.z=0;for(const b of T.balls)if(b!==e&&b.on&&Math.hypot(b.x-e.x,b.z-e.z)<2*e.r)b.x+=.07;msg='ব্রেকে ৮ নম্বর পড়েছে, আবার বসানো হলো। ';}
     else{const win=S.onEight&&!foul?me:op;S.wins[win]++;S.winner=win;S.msg=win===me?PN[me]+' ৮ নম্বর বল ফেলে গেম জিতল!':PN[me]+' '+(S.onEight?'ফাউলসহ ':'আগেভাগে ')+'৮ নম্বর ফেলেছে, '+PN[op]+' জিতল!';return'over';}}
   if(scratch){cb.on=true;cb.mesh.visible=true;cb.vx=cb.vz=0;cb.x=-T.hx/2;cb.z=0;}
   if(!g&&!foul&&!S.wasBreak){const own=pot.find(b=>b.n!==8);if(own){S.groups[me]=own.kind;S.groups[op]=own.kind==='solid'?'stripe':'solid';msg+=PN[me]+' '+KN[own.kind]+' নিল। ';}}
   const g2=S.groups[me],potOwn=pot.some(b=>b.n!==8&&(S.wasBreak||!g2||b.kind===g2));
-  if(foul){S.shooter=op;S.ballInHand=true;msg+='ফাউল: '+(scratch?'সাদা বল পকেটে পড়েছে':!fh?'কোনো বলে লাগেনি':'আগে ভুল বলে লেগেছে')+'। '+PN[op]+' পেল বল ইন হ্যান্ড।';}
+  if(foul){S.shooter=op;S.ballInHand=true;msg+='ফাউল: '+(scratch?'সাদা বল পকেটে পড়েছে':!fh?'কোনো বলে লাগেনি':T.noRail?'কোনো বল পকেটে পড়েনি, কুশনেও লাগেনি':'আগে ভুল বলে লেগেছে')+'। '+PN[op]+' পেল বল ইন হ্যান্ড।';}
   else if(potOwn)msg+=PN[me]+' বল ফেলেছে, আবার খেলবে।';
   else{S.shooter=op;msg+=(S.wasBreak?'ব্রেকে কিছু পড়েনি। ':'মিস। ')+PN[op]+' এর পালা।';}
   S.msg=msg;S.wasBreak=false;return potOwn&&!foul?'same':'switch';}
@@ -949,6 +987,7 @@ function updBoard(){const S=POOL,el=document.getElementById('poolBoard');if(!el|
   const row=i=>{const g=S.groups[i],left=g?ballsOn(T,b=>b.kind===g).length:0;return'<div class="pr'+(S.shooter===i&&S.state!=='over'?' on':'')+'"><b>'+PN[i]+'</b><span>'+(g?KN[g]+(left?', বাকি '+bnN(left):', এখন ৮ নম্বর'):'খোলা টেবিল')+'</span><em>'+bnN(S.wins[i])+'</em></div>';};
   el.innerHTML='<div class="pt">৮-বল পুল <small>গেম '+bnN(S.games)+' · জয় সংখ্যা ডানে</small></div>'+row(0)+row(1)+'<div class="pm">'+(S.msg||'')+'</div>';}
 // the match being played with real shots (null for the ambient game and for old-style matches)
+function carromMatch(){return MT&&MT.turnPool&&MT.game==='carrom'&&MT.state==='play'?MT:null;}
 function poolMatch(){return MT&&MT.turnPool&&MT.game==='pool'&&MT.state==='play'?MT:null;}
 function poolWalk(sh){const S=POOL,T=S.T,cb=S.cue,d=standDist(T,cb.x,cb.z,S.shot.ax,S.shot.az,S.ax,S.az);S.stand=[T.cx+cb.x-S.shot.ax*d,T.cz+cb.z-S.shot.az*d];
   sh.path=perimPath(T.cx,T.cz,S.ax,S.az,[sh.x,sh.z],S.stand);S.state='walk';S.t=0;}
@@ -961,7 +1000,7 @@ function fitCue(S,x,z){const T=S.T,r=S.cue.r,mx=T.hx-r*1.3,mz=T.hz-r*1.3,xm=S.br
 // a shot chosen by a person: ang (radians, x towards z), pw (0 to 1) and, when the cue ball was in hand, where it was put
 function humanShot(S,mv){const T=S.T,cb=S.cue,a=+mv.ang||0,pw=clamp(mv.pw==null?.5:+mv.pw,0,1);
   if(S.breakNext||S.ballInHand){const q=fitCue(S,mv.cx!=null?+mv.cx:-T.hx/2,mv.cz!=null?+mv.cz:0);cb.x=q[0];cb.z=q[1];cb.on=true;cb.mesh.visible=true;cb.vx=cb.vz=0;S.ballInHand=false;}
-  return{ax:Math.cos(a),az:Math.sin(a),sp:.5+pw*6.1};}
+  return{ax:Math.cos(a),az:Math.sin(a),sp:.5+pw*6.1,vs:clamp(+mv.sy||0,-1,1),hs:clamp(+mv.sx||0,-1,1)};}
 function poolUpdate(t,dt){const S=POOL,T=S.T;stepDiscs(T,dt);
   for(const b of T.balls){if(!b.on)continue;b.mesh.position.set(T.cx+b.x,T.y+b.r,T.cz+b.z);const v=Math.hypot(b.vx,b.vz);if(v>0){_v.set(b.vz/v,0,-b.vx/v);b.mesh.rotateOnWorldAxis(_v,v*dt/b.r);}}
   const sh=S.players[S.shooter],wt=S.players[1-S.shooter],cue=S.cues[S.shooter],wcue=S.cues[1-S.shooter];
@@ -975,14 +1014,14 @@ function poolUpdate(t,dt){const S=POOL,T=S.T;stepDiscs(T,dt);
       S.humanShot=false;S.shot=poolPlan();poolWalk(sh);updBoard();break;}
     case 'await':{rest(sh);holdCue(sh,cue);const M=poolMatch();if(!M){S.state='plan';break;}
       const mv=M.moves[M.mIdx];if(!mv){M.blocked=true;break;}
-      M.mIdx++;if(mv.p!==S.shooter)break;   // not this player's move: ignore it
+      M.mIdx++;if(mv.quit||mv.p!==S.shooter)break;   // not this player's move: ignore it
       if(mv.auto){S.humanShot=false;S.shot=poolPlan();}else{S.humanShot=true;S.shot=humanShot(S,mv);}
       poolWalk(sh);updBoard();break;}
     case 'walk':{const done=moveAlong(sh,dt);holdCue(sh,cue);if(done){S.state='turn';S.t=0;}break;}
     case 'turn':{rest(sh);holdCue(sh,cue);S.t+=dt;if(turnTo(sh,Math.atan2(S.shot.ax,S.shot.az),dt)||S.t>1){S.state='aim';S.t=0;}break;}
     case 'aim':case 'strike':case 'follow':{S.t+=dt;let back;
       if(S.state==='aim'){const k=Math.min(1,S.t/.5);back=.04+.11*(.5-.5*Math.cos(S.t*4.2))*k;if(S.t>(S.humanShot?.8:2.4)){S.state='strike';S.t=0;}}
-      else if(S.state==='strike'){back=lerp(.15,-.02,Math.min(1,S.t/.09));if(S.t>.09&&!S.hit){S.hit=true;if(S.breakNext&&sfx.has('poolBreak'))T.hush=performance.now()+1800;tsnd(T,S.breakNext?'Break':'Cue',1);T.potted=[];T.firstHit=null;S.wasBreak=S.breakNext;S.breakNext=false;S.cue.vx=S.shot.ax*S.shot.sp;S.cue.vz=S.shot.az*S.shot.sp;S.state='follow';S.t=0;}}
+      else if(S.state==='strike'){back=lerp(.15,-.02,Math.min(1,S.t/.09));if(S.t>.09&&!S.hit){S.hit=true;if(S.breakNext&&sfx.has('poolBreak'))T.hush=performance.now()+1800;tsnd(T,S.breakNext?'Break':'Cue',1);T.potted=[];T.firstHit=null;T.rail=false;T.noRail=false;S.wasBreak=S.breakNext;S.breakNext=false;const cb=S.cue,ax=S.shot.ax,az=S.shot.az;cb.vx=ax*S.shot.sp;cb.vz=az*S.shot.sp;cb.dx=ax;cb.dz=az;cb.rx=-az;cb.rz=ax;cb.fs=(S.shot.vs||0)*S.shot.sp*.4;cb.es=S.shot.hs||0;S.state='follow';S.t=0;}}
       else{back=-.03;if(S.t>.8){S.state='watch';S.t=0;}}
       const k=S.state==='aim'?Math.min(1,S.t/.35):S.state==='follow'?1-ease((S.t-.5)/.3):1;poolPose(sh,back,k);
       if(!S.line)S.line=[T.cx+S.cue.x,T.cz+S.cue.z];const L=S.line,dx=S.shot.ax,dz=S.shot.az,nt=Math.hypot(1,.12),tx=L[0]-dx*(back+.03),tz=L[1]-dz*(back+.03),ty=T.y+.034;
@@ -1024,6 +1063,9 @@ function carromUpdate(t,dt){if(!CARROM)return;const S=CARROM,T=S.T;stepDiscs(T,d
   if(S.buzz>0)S.buzz-=dt;
   switch(S.state){
     case 'place':{if(moving(T))break;S.t+=dt;if(S.t<.8)break;
+      const M=carromMatch();
+      if(M&&!S.forceAuto&&M.humans[S.turn>>1]){S.state='await';S.t=0;S.humanShot=false;st.on=true;st.mesh.visible=true;S.cp=null;st.x=-n[0]*.275;st.z=-n[1]*.275;st.vx=st.vz=0;break;}   // a real player chooses the shot
+      S.forceAuto=false;S.humanShot=false;
       let best=null;for(let u=-.2;u<=.201;u+=.05){const sx=-n[0]*.275+pp[0]*u,sz=-n[1]*.275+pp[1]*u;
         for(const c of S.coins){if(!c.on)continue;for(const p of T.pockets){let ux=p[0]-c.x,uz=p[1]-c.z;const ul=Math.hypot(ux,uz);ux/=ul;uz/=ul;const gx=c.x-ux*(c.r+st.r),gz=c.z-uz*(c.r+st.r);
           let ax=gx-sx,az=gz-sz;const al=Math.hypot(ax,az);if(al<.05)continue;ax/=al;az/=al;if(ax*n[0]+az*n[1]<.15)continue;const cut=ax*ux+az*uz;if(cut<.45)continue;
@@ -1031,12 +1073,20 @@ function carromUpdate(t,dt){if(!CARROM)return;const S=CARROM,T=S.T;stepDiscs(T,d
       if(!best){const sx=-n[0]*.275,sz=-n[1]*.275;best={sx,sz,ax:n[0],az:n[1],sp:2.4};}
       S.cp=null;st.on=true;st.mesh.visible=true;st.x=best.sx;st.z=best.sz;st.vx=st.vz=0;for(const c of S.coins)if(c.on&&Math.hypot(c.x-st.x,c.z-st.z)<.04){c.x+=n[0]*.05;c.z+=n[1]*.05;}
       const nz=(SRC()-.5)*.04;S.shot={ax:best.ax*Math.cos(nz)-best.az*Math.sin(nz),az:best.ax*Math.sin(nz)+best.az*Math.cos(nz),sp:best.sp};S.state='aim';S.t=0;break;}
+    case 'await':{const M=carromMatch();if(!M){S.state='place';break;}
+      const mv=M.moves[M.mIdx];if(!mv){M.blocked=true;break;}
+      M.mIdx++;if(mv.quit||mv.p!==(S.turn>>1))break;
+      if(mv.auto){S.forceAuto=true;S.state='place';S.t=1;break;}
+      const pv=[-n[1],n[0]],u=clamp(+mv.cx||0,-.2,.2);st.on=true;st.mesh.visible=true;st.vx=st.vz=0;st.x=-n[0]*.275+pv[0]*u;st.z=-n[1]*.275+pv[1]*u;
+      for(const c of S.coins)if(c.on&&Math.hypot(c.x-st.x,c.z-st.z)<.04){c.x+=n[0]*.05;c.z+=n[1]*.05;}
+      const base=Math.atan2(n[1],n[0]),a=base+clamp(Math.atan2(Math.sin((+mv.ang||0)-base),Math.cos((+mv.ang||0)-base)),-1.25,1.25);
+      S.cp=null;S.shot={ax:Math.cos(a),az:Math.sin(a),sp:.7+clamp(+mv.pw,0,1)*3.3};S.humanShot=true;S.state='aim';S.t=0;break;}
     case 'aim':case 'flick':{S.t+=dt;const J=cur.J;J.spine.rotation.x=.62;J.neck.rotation.set(-.05,0,0);J.lHip.rotation.x=J.rHip.rotation.x=-.12;J.lKn.rotation.x=J.rKn.rotation.x=.2;
       J.spine.rotation.x=.55;J.neck.rotation.set(.15,0,0);const n=CN[S.turn],lf=[n[1],-n[0]],ex=T.cx-n[0]*.43,ez=T.cz-n[1]*.43;
       armIK(cur,'l',_vt.set(ex+lf[0]*.24,T.y+.035,ez+lf[1]*.24),PCL);J.lHand.rotation.set(0,1.3,0);
       let off;if(S.state==='aim')off=.075+Math.sin(t*9)*.004;else off=S.t<.08?.075*(1-S.t/.08):-Math.min(.04,(S.t-.08)*.5);
       const cpx=S.cp?S.cp[0]:T.cx+st.x,cpz=S.cp?S.cp[1]:T.cz+st.z;armIK(cur,'r',_vt.set(cpx-S.shot.ax*off,T.y+.03,cpz-S.shot.az*off),PCR);J.rHand.rotation.set(-.3,-1.2,0);
-      if(S.state==='aim'&&S.t>1.5){S.state='flick';S.t=0;}
+      if(S.state==='aim'&&S.t>(S.humanShot?.45:1.5)){S.state='flick';S.t=0;}
       if(S.state==='flick'&&S.t>=.08&&!S.hit){S.hit=true;tsnd(T,'Flick',1);S.cp=[T.cx+st.x,T.cz+st.z];T.potted=[];st.vx=S.shot.ax*S.shot.sp;st.vz=S.shot.az*S.shot.sp;}
       if(S.state==='flick'&&S.t>.5){S.state='watch';S.t=0;}break;}
     case 'watch':{if(moving(T)){S.t=0;break;}S.t+=dt;if(S.t<.6)break;S.hit=false;
@@ -1106,7 +1156,7 @@ function zoneAt(x,z){let best=null,ba=1e9;for(const zn of ZONES)if(x>=zn.r[0]&&x
 let lastZone='';
 // Jumping: the player has a height (P.y) and a vertical speed. Low furniture is jumped over or stood on; walls, people and tall things are not.
 const GRAV=22,JUMP_V=6.6;   // a jump peaks at about a metre, enough for a desk or a sofa
-function supportAt(x,z,y){let best=0;for(const c of colliders){const top=c[4]===undefined?99:c[4];if(top>1.3||top<=best)continue;
+function supportAt(x,z,y){let best=stairH(x,z);for(const c of colliders){const top=c[4]===undefined?99:c[4];if(top>1.3||top<=best)continue;
   if(x>c[0]-.1&&x<c[1]+.1&&z>c[2]-.1&&z<c[3]+.1&&top<=y+.12)best=top;}return best;}
 function airPose(P){const J=P.J;J.lSh.rotation.set(-.9,0,.5);J.rSh.rotation.set(-.9,0,-.5);J.lHip.rotation.x=-.7;J.rHip.rotation.x=-.35;J.lKn.rotation.x=.9;J.rKn.rotation.x=.5;J.spine.rotation.x=.05;}
 // Hand-keyed body movement: kf() reads a value from a list of [time, value] keys, with smooth easing between them
@@ -1196,10 +1246,28 @@ function impact(tg,kind){if(!tg)return;HS.t=.07;SHAKE.t=.2;const word=kind==='ki
   if(tg.kind==='user'){tg.r.hitAge=0;tg.r.hitKind=react;tmpBubble(tg.P,tg.desk?'আমার ডেস্কে লাথি?! 😱':'আউ! 😵',1.8);
     api('/api/slap',{action:'slap',target:tg.id,kind:tg.desk?'desk':kind}).then(d=>{
       if(d&&d.ok)toast((kind==='kick'?'ধুম! ':'চটাস! ')+tg.name+' এইচআরে অভিযোগ করতে গেছেন… শো-কজ আসছে!',4500);else toast((d&&d.error)||word+'টা লাগেনি, আবার চেষ্টা করুন।',3000);});}
-  else{const P=tg.P;if(!HITS.some(h=>h.P===P))HITS.push({P,age:0,dur:react==='slap'?1.4:react==='kick'?1.7:1.2,kind:react,x:P.root.position.x,y0:P.root.position.y,z:P.root.position.z});
+  else{if(tg.P.couple){coupleHit(tg.P,kind);return;}const P=tg.P;if(!HITS.some(h=>h.P===P))HITS.push({P,age:0,dur:react==='slap'?1.4:react==='kick'?1.7:1.2,kind:react,x:P.root.position.x,y0:P.root.position.y,z:P.root.position.z});
     const L=tg.desk?['আমার ডেস্কে লাথি?! ডেস্কটা তো আমার সন্তানের মতো!','এই! ডেস্কের কী দোষ?!','আমি এইচআরকে বলছি!']:['আউ! এইচআরকে বলছি!','এই! কী করলেন?!','আমি কিন্তু রেকর্ড করে রাখলাম!','ওরে বাবা! আমার শরীর!'];
     tmpBubble(P,L[Math.floor(Math.random()*L.length)],2.6);
     if(!NET.npcPending){NET.npcPending=true;const lk=tg.desk?'npcDesk':kind==='kick'?'npcKick':'npcSlap';setTimeout(()=>npcShowCause(lk),6500);}}}
+// the couple on the stairs get what they deserve and HR is delighted
+function coupleHit(P,kind){if(CP.busy)return;CP.busy=true;
+  for(const q of COUPLE)if(!HITS.some(h=>h.P===q))HITS.push({P:q,age:0,dur:kind==='kick'?1.7:1.4,kind:kind==='kick'?'kick':'slap',x:q.root.position.x,y0:q.root.position.y,z:q.root.position.z});
+  const other=COUPLE.find(q=>q!==P);
+  tmpBubble(P,['আউউ! আমরা তো শুধু গল্প করছিলাম!','ছি ছি! আর কোনোদিন করব না! 🙏','মাফ করবেন স্যার, ভুল হয়ে গেছে!'][Math.floor(Math.random()*3)],2.4);
+  tmpBubble(other,['ইশশ! চলো পালাই! 🏃','এইচআর জানলে কী হবে?!','আমি তো আগেই বলেছিলাম এখানে না!'][Math.floor(Math.random()*3)],2.4);
+  setTimeout(()=>{for(const q of COUPLE){q.root.getWorldPosition(_v);puff(_v,.08,1.4,_v2.set(0,.2,0),.6);}toast('জুটি লজ্জায় পালিয়েছে 🏃💨 সিঁড়ি এখন ফাঁকা',3500);CP.until=performance.now()+120000;},2300);
+  api('/api/slap',{action:'couple',kind}).then(d=>{setTimeout(()=>{if(d&&d.ok){if(PROFILE)PROFILE.employment=d.employment;showPraise(d.before,d.employment,d.delta);}else{if(d&&d.error)toast(d.error,3500);}},2600);});}
+function coupleUpdate(){if(CP.busy&&CP.until&&performance.now()>CP.until){CP.busy=false;CP.until=0;}
+  const down=mode==='walk'&&(player.y||0)<-.7&&player.x>5;for(const q of COUPLE)q.root.visible=down&&!CP.busy;}
+const PRAISE=[
+  {t:'🏅 প্রশংসাপত্র: সিঁড়ির সংস্কৃতি রক্ষায়',b:'প্রিয় {name},\n\nআমরা জানতে পেরেছি, আপনি সিঁড়িতে "বিশেষ আলাপ" চালানো জুটিকে সময়মতো শিক্ষা দিয়েছেন। কোম্পানির সংস্কৃতি রক্ষায় আপনার এই অবদান আমরা সোনার অক্ষরে (অথবা অন্তত হলুদ মার্কারে) লিখে রাখলাম।\n\nআপনার এমপ্লয়মেন্ট রেটিং বাড়ানো হলো। তবে মনে রাখবেন, প্রেম বন্ধ করা আমাদের উদ্দেশ্য নয়, প্রেম অফিস টাইমের বাইরে করাই উদ্দেশ্য।',s:'কৃতজ্ঞতায়, এইচআর আপা 😊'},
+  {t:'ধন্যবাদ পত্র: সিঁড়ির পাহারাদার',b:'{name},\n\nআজ থেকে আপনি আমাদের "অনানুষ্ঠানিক সিঁড়ি-পরিদর্শক"। সিঁড়ি হলো ওঠানামার জায়গা, প্রেম-ওঠানামার জায়গা নয়। আপনার তৎপরতায় আমরা মুগ্ধ, তাই রেটিংয়ে বোনাস দেওয়া হলো।\n\nপুনশ্চ: এই চিঠি কাউকে দেখাবেন না, বিশেষ করে ওই দুজনকে।',s:'ইতি, এইচআর বিভাগ (গোপনে খুশি)'},
+  {t:'সুনাম-পত্র: আপনি আমাদের গর্ব',b:'প্রিয় {name},\n\nএইচআর আপা আজ সারাদিন হাসিমুখে ছিলেন, আর তার কারণ আপনি। আপনার এই কাজে অফিসের শৃঙ্খলা ফিরেছে, সিঁড়ির পরিবেশ বদলেছে। রেটিং বাড়ল, চা-নাশতাও আমাদের পক্ষ থেকে।\n\n(চা-এর কথাটা মজা করে বললাম, কাপ আপনাকেই আনতে হবে।)',s:'শুভেচ্ছান্তে, এইচআর আপা 🌸'}];
+function showPraise(before,after,delta){const L=PRAISE[Math.floor(Math.random()*PRAISE.length)];
+  byId('lTitle').textContent=L.t;byId('lBody').textContent=L.b.replace(/\{name\}/g,window.CB_PLAYER.name);byId('lSign').textContent=L.s;
+  const cut=byId('lCut');cut.className='lcut good';cut.textContent='এমপ্লয়মেন্ট রেটিং '+bnd(before)+' → '+bnd(after)+(delta>0?' (+'+bnd(delta)+')':' (আগেই সর্বোচ্চ!)');
+  byId('lOk').disabled=false;byId('lOk').textContent='ধন্যবাদ ম্যাডাম 😎';byId('lNo').hidden=true;byId('mletter').hidden=false;sfx.play('ok');}
 async function npcShowCause(lk){NET.npcPending=false;const d=await api('/api/slap',{action:'npc',kind:lk==='npcDesk'?'desk':lk==='npcKick'?'kick':'slap'});
   if(d&&d.ok){if(PROFILE)PROFILE.employment=d.employment;showLetter(lk,'',d.before,d.employment,d.delta);}else if(d&&d.error)toast(d.error,3000);}
 
@@ -1235,7 +1303,7 @@ async function defy(){const no=byId('lNo');no.disabled=true;const d=await api('/
 function showLetter(kind,victim,before,after,delta){const set=LET[kind]||LET.slap,L=set[Math.floor(Math.random()*set.length)],name=window.CB_PLAYER.name;
   byId('lTitle').textContent=L.t;byId('lBody').textContent=L.b.replace(/\{name\}/g,name).replace(/\{v\}/g,victim||'সহকর্মী');byId('lSign').textContent=L.s;
   const cut=byId('lCut');cut.className='lcut bad';cut.textContent='এমপ্লয়মেন্ট রেটিং '+bnd(before)+' → '+bnd(after)+' (−'+bnd(delta)+')'+(after<=0?' · আপনি এখন "পরীক্ষাধীন কর্মী" 😬':'');
-  byId('lOk').disabled=false;byId('lOk').textContent='ক্ষমা চাইলাম 🙏';byId('lNo').disabled=false;byId('mletter').hidden=false;sfx.play('fail');}
+  byId('lOk').disabled=false;byId('lOk').textContent='ক্ষমা চাইলাম 🙏';byId('lNo').hidden=false;byId('lNo').disabled=false;byId('mletter').hidden=false;sfx.play('fail');}
 // someone you hurt has complained: HR's letter reaches you
 function applyNotices(list){for(const n of list){if(NET.handled.has('n'+n.id))continue;NET.handled.add('n'+n.id);if(PROFILE)PROFILE.employment=n.after;
   showLetter(n.kind==='kick'?'kick':n.kind==='desk'?'desk':'slap',n.victim,n.before,n.after,n.delta);}}
@@ -1360,7 +1428,7 @@ function chairNear(){const P=player;if(SIT.on||MT||CMP.on||SETUP.state==='run'||
   for(const s of DESKS){const d=Math.hypot(s[0]-P.x,s[1]-P.z);if(d<bd){const c={x:s[0],z:s[1],yaw:s[2],h:.48,desk:s};if(!busy(c)){bd=d;best=c;}}}
   return best;}
 function startSit(c){const P=player;SIT.on=true;SIT.t=0;SIT.c=c;SIT.from=[P.x,P.z];if(SMOKE.on)stopSmoke(false);P.seat=c.h;P.kbd=.6;P.v='type';P.role=window.CB_PLAYER.role||'se';sfx.play('pop',.2);}
-function standUp(){const P=player,c=SIT.c;if(!SIT.on)return;SIT.on=false;
+function standUp(){const P=player,c=SIT.c;if(!SIT.on)return;SIT.on=false;if(ACT.kind)stopAct(true);
   if(c){const f0=Math.sin(c.yaw),f1=Math.cos(c.yaw),q=nearFree(c.x-f0*.75,c.z-f1*.75);P.x=q[0];P.z=q[1];P.yaw=c.yaw+Math.PI;}P.y=0;P.vy=0;}
 function sitUpdate(P,t,dt){const c=SIT.c;SIT.t+=dt;const k=ease(SIT.t/.5);
   if(SIT.from){P.x=lerp(SIT.from[0],c.x,k);P.z=lerp(SIT.from[1],c.z,k);}else{P.x=c.x;P.z=c.z;}
@@ -1390,7 +1458,7 @@ function lightCeremony(P,a,t,ret){const J=P.J;P.root.updateMatrixWorld(true);con
   armIK(P,'l',h,PTL);P.lhT=h;J.neck.rotation.x=.22*ease((a-1.2)/.4);J.spine.rotation.x=.06;
   L.visible=a>1.0&&(a<3.1||!ret);L.position.copy(h).add(V3(0,.055,0));L.rotation.y=P.yaw;L.userData.flame.visible=a>1.95&&a<2.5;
   if(a>=2.2&&P.cigLit===false){P.cigLit=true;puff(tipW(P),.03,2,V3(0,.1,0),.4);}}
-function startSmoke(buddy,skip){const P=player;if(lastZone!=='bal'||SMOKE.on)return;
+function startSmoke(buddy,skip){const P=player;if(SMOKE.on)return;
   if(!P.cigTip)addCig(P);P.cigGroup.visible=true;P.cigLit=!!skip;ensureLighter(P);SMOKE.on=true;SMOKE.t=skip?3.2:0;SMOKE.buddy=buddy||null;sfx.play('lighter');
   if(!skip)toast(buddy?'দুজনে মিলে সুখটান! 🚬 ('+buddy+')':'সিগারেট ধরালেন 🚬 (ধূমপান স্বাস্থ্যের জন্য ক্ষতিকর)। হাঁটলে বা লাফ দিলে ফেলে দেবেন।',4500);}
 function stopSmoke(natural){if(!SMOKE.on)return;SMOKE.on=false;SMOKE.buddy=null;if(player.cigGroup)player.cigGroup.visible=false;if(player.lighter)player.lighter.visible=false;
@@ -1452,8 +1520,8 @@ function startPair(kind,role,t0,buddyName,buddyId,buddyP,where){
   toast(kind==='beg'?buddyName+' এর সাথে কথা হচ্ছে… 😅':buddyName+' কে নিয়ে সিগারেট খেতে যাচ্ছেন 🚬',3500);}
 function endPair(){const P=player,buddy=PAIR.buddyName,kind=PAIR.kind;PAIR.on=false;CMP.on=false;if(PASS.mesh)PASS.mesh.visible=false;
   if(P.lighter&&kind==='smoke'){P.lighter.visible=false;}
-  if(kind==='smoke'){P.cigLit=true;if(lastZone==='bal')startSmoke(buddy,true);}
-  else if(kind==='beg'&&PAIR.role==='asker'){P.cigGroup.visible=true;P.cigLit=false;if(lastZone==='bal')startSmoke(null,false);}}
+  if(kind==='smoke'){P.cigLit=true;startSmoke(buddy,true);}
+  else if(kind==='beg'&&PAIR.role==='asker'){P.cigGroup.visible=true;P.cigLit=false;startSmoke(null,false);}}
 const sayOnce=(key,P,text,sec)=>{if(!PAIR.said[key]){PAIR.said[key]=1;tmpBubble(P,text,sec);}};
 const pairSide=(P,O)=>({M:V3((P.x+O.x)/2,1.08,(P.z+O.z)/2)});
 function pairPose(P,role,a,O,t,dt){P.root.updateMatrixWorld(true);P.yaw=lerpAng(P.yaw,Math.atan2(O.x-P.x,O.z-P.z),.25);P.root.rotation.y=P.yaw;
@@ -1501,15 +1569,25 @@ function pairLocal(P,t,dt){const a=nowS()-PAIR.t0;
   if(PAIR.kind==='smoke'){const host=PAIR.role==='host'?P:O,guest=PAIR.role==='host'?O:P;pairLighter(host,guest,a);if(a-5>7.7)endPair();}
   else if(a>17.2)endPair();}
 
+// your own name over your head whenever you are at a desk (any desk, not just yours)
+let ME_TAG=null;
+function meTag(P){const near=!MT&&!CMP.on&&window.CB_PLAYER&&(SIT.on&&SIT.c&&SIT.c.desk||DESKS.some(d=>Math.hypot(d[0]-P.x,d[1]-P.z)<1.1));
+  if(!ME_TAG){if(!near)return;ME_TAG=document.createElement('div');ME_TAG.className='bub on rtag me';bubbleLayer().appendChild(ME_TAG);}
+  if(!near){ME_TAG.style.visibility='hidden';return;}
+  const nm=(PROFILE&&PROFILE.nickname)||shortName(window.CB_PLAYER.name);if(ME_TAG.dataset.n!==nm){ME_TAG.dataset.n=nm;ME_TAG.textContent='';const b=document.createElement('b');b.textContent='🟢 '+nm;const sm=document.createElement('small');sm.textContent='আপনি';ME_TAG.append(b,sm);}
+  P.J.neck.getWorldPosition(_v);_v.y+=.3;_v.project(camera);const w=stage.clientWidth,h=stage.clientHeight;
+  if(_v.z>1||_v.z<-1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){ME_TAG.style.visibility='hidden';return;}
+  ME_TAG.style.visibility='';const bw=ME_TAG.offsetWidth,x=Math.max(bw/2+6,Math.min(w-bw/2-6,(_v.x*.5+.5)*w)),y=(-_v.y*.5+.5)*h;
+  ME_TAG.style.transform='translate('+x+'px,'+y+'px) translate(-50%,-100%)';}
 function updateWalk(t,dt){const P=player;
   P.cam+=((keys.lookL?1:0)-(keys.lookR?1:0))*1.9*dt;let ix=(keys.right?1:0)-(keys.left?1:0)+joy.x,iy=(keys.fwd?1:0)-(keys.back?1:0)+joy.y;const m=Math.hypot(ix,iy);if(m>1){ix/=m;iy/=m;}
-  if(SLAP.cool>0)SLAP.cool-=dt;if(HIT.t>0)HIT.t-=dt;const adt=HS.t>0?0:dt;if(HS.t>0)HS.t-=dt;if(SHAKE.t>0)SHAKE.t-=dt;
+  actTick(P,dt,m);if(SLAP.cool>0)SLAP.cool-=dt;if(HIT.t>0)HIT.t-=dt;const adt=HS.t>0?0:dt;if(HS.t>0)HS.t-=dt;if(SHAKE.t>0)SHAKE.t-=dt;
   const cmpBusy=CMP.on&&CMP.stage!=='done';
   const spd=((MT&&MT.auto)||(cmpBusy&&CMP.auto))?((cmpBusy&&CMP.auto&&CMP.speed)||3):keys.run?4:1.8,fx=-Math.sin(P.cam),fz=-Math.cos(P.cam),rx=Math.cos(P.cam),rz=-Math.sin(P.cam);
   let dyo=0,bko=0,moving=false;
   if(SETUP.state==='run'){setupUpdate(P,dt,t);P.gnd=true;}                                   // unpacking at your desk
   else if(SIT.on){                                                                           // sitting on a chair: any walking key stands you up
-    if(SIT.t>.6&&(m>.3||keys.jump)){keys.jump=false;standUp();}else{sitUpdate(P,t,dt);P.gnd=true;}}
+    if(SIT.t>.6&&(m>.3||keys.jump)){keys.jump=false;standUp();}else{sitUpdate(P,t,dt);P.gnd=true;if(ACT.kind)actPoseFor(P,ACT.kind,true,ACT.t,t,dt);else if(ACT.cup)holdCupPose(P);}}
   if(!(SETUP.state==='run')&&!SIT.on){
     let mx=(fx*iy+rx*ix)*spd*dt,mz=(fz*iy+rz*ix)*spd*dt;
     if(MT){mx=mz=0;if(MT.auto){const a=autoStep(P,dt);mx=a[0];mz=a[1];}}   // a challenge is running: the game moves you
@@ -1517,7 +1595,7 @@ function updateWalk(t,dt){const P=player;
     else if(HIT.t>0)mx=mz=0;
     if(SLAP.t>=0)mx=mz=0;   // planted on both feet while swinging
     moving=!!(mx||mz);
-    if(SMOKE.on&&(moving||lastZone!=='bal'))stopSmoke(false);
+    if(SMOKE.on&&moving)stopSmoke(false);
     if(keys.jump){keys.jump=false;if(P.gnd!==false&&!MT&&!cmpBusy&&HIT.t<=0){P.vy=JUMP_V;P.gnd=false;sfx.play('jump');if(SMOKE.on)stopSmoke(false);}}
     const y0=P.y||0;
     if(moving){if(!hit(P.x+mx,P.z,y0))P.x+=mx;if(!hit(P.x,P.z+mz,y0))P.z+=mz;const ty=Math.atan2(mx,mz);let df=ty-P.yaw;df=Math.atan2(Math.sin(df),Math.cos(df));P.yaw+=df*Math.min(1,dt*10);}
@@ -1530,7 +1608,9 @@ function updateWalk(t,dt){const P=player;
     else if(!P.gnd)airPose(P);
     else if(PAIR.on&&PAIR.ready&&!moving)pairLocal(P,t,dt);
     else if(SMOKE.on&&!moving){SMOKE.t+=dt;smokePose(P,SMOKE.t,t,dt);if(SMOKE.t>=SMOKE_LEN+3.2)stopSmoke(true);}
-    else if(moving){P.wph=(P.wph||0)+dt*spd*4.6;const sn=Math.floor(P.wph/Math.PI);if(sn!==P.sn){P.sn=sn;sfx.play(spd>2?'run':'step');}walkPose(P,P.wph,Math.min(1,spd/1.8));}
+    else if(ACT.kind&&!moving)actPoseFor(P,ACT.kind,false,ACT.t,t,dt);
+    else if(ACT.cup&&!moving)holdCupPose(P);
+    else if(moving){P.wph=(P.wph||0)+dt*spd*4.6;const sn=Math.floor(P.wph/Math.PI);if(sn!==P.sn){P.sn=sn;sfx.play(spd>2?'run':'step');}walkPose(P,P.wph,Math.min(1,spd/1.8));if(ACT.cup)holdCupPose(P);}
     if(SLAP.t>=0){SLAP.t+=adt;const u=SLAP.t/SLAP.dur;if(!SLAP.fired&&SLAP.t>=SLAP.imp){SLAP.fired=true;impact(SLAP.tg,SLAP.kind);}
       if(u<1)(SLAP.kind==='kick'?kickPose:slapPose)(P,u);else SLAP.t=-1;}
     if(CMP.on&&CMP.kind==='trouble'&&CMP.stage!=='hit'){const J=P.J;   // head down, being marched off; then hands folded, pleading
@@ -1538,13 +1618,21 @@ function updateWalk(t,dt){const P=player;
       else{J.spine.rotation.x=.5;J.neck.rotation.x=.65;J.lSh.rotation.set(-.75,0,.18);J.rSh.rotation.set(-.75,0,-.18);J.lEl.rotation.x=J.rEl.rotation.x=-1.5;J.hips.rotation.z=Math.sin(t*30)*.015;}}
     if(OFFER.t>=0){OFFER.t+=dt;offerPose(P,OFFER.t/1.6);if(OFFER.t>1.6){OFFER.t=-1;if(!SMOKE.on&&!SOC.out&&P.cigGroup)P.cigGroup.visible=false;}}
   }
-  P.root.position.set(P.x-Math.sin(P.yaw)*bko,(P.y||0)+dyo,P.z-Math.cos(P.yaw)*bko);P.root.rotation.y=P.yaw;life(P,t,dt);
-  let back=2.4;const up=1.95+(P.y||0)*.6;for(;back>.7;back-=.2){if(!hit(P.x-fx*back,P.z-fz*back))break;}camera.position.set(P.x-fx*back,up,P.z-fz*back);camera.lookAt(P.x+fx*1.5,1.25+(P.y||0)*.5,P.z+fz*1.5);
+  // asleep on the floor: the whole body lies down (on a chair the head just goes down on the desk)
+  const lie=ACT.kind==='sleep'&&!SIT.on?ease(ACT.t/1):0;P.root.rotation.order='YXZ';P.root.rotation.x=-lie*Math.PI/2;
+  P.root.position.set(P.x-Math.sin(P.yaw)*bko+Math.sin(P.yaw)*.85*lie,(P.y||0)+dyo+.2*lie,P.z-Math.cos(P.yaw)*bko+Math.cos(P.yaw)*.85*lie);P.root.rotation.y=P.yaw;life(P,t,dt);
+  // a camera that adapts: it pulls in at once when a wall is behind you (and rises to look down over your shoulder), drifts back out slowly, and follows steps smoothly
+  let back=2.4;for(let t=.36;t<=2.4;t+=.12){if(hit(P.x-fx*t,P.z-fz*t,Math.min(0,P.y||0))){back=Math.max(.1,t-.3);break;}}   // the first wall along the line behind you, not just at the end of it
+  P.cb=(P.cb==null||back<P.cb)?back:P.cb+(back-P.cb)*Math.min(1,dt*1.8);
+  const sq=Math.max(clamp((2.4-P.cb)/1.7,0,1),lie*.85),base=1.95+(P.y||0)*.6,tgtY=Math.min(base+sq*1.5,Math.max(base,(P.y||0)+2.6));   // never up through the ceiling
+  P.cyv=P.cyv==null?tgtY:P.cyv+(tgtY-P.cyv)*Math.min(1,dt*6);
+  camera.position.set(P.x-fx*P.cb,P.cyv,P.z-fz*P.cb);camera.lookAt(P.x+fx*1.5*(1-sq*.6),1.25+(P.y||0)*.5-sq*.3,P.z+fz*1.5*(1-sq*.6));
   if(CMP.on&&CMP.kind==='trouble'&&CMP.stage==='hit'&&BS.people[CMP.boss]){const B=BS.people[CMP.boss],k=ease(CMP.t/.5);B.J.head.getWorldPosition(_v);const tg=_v.clone(),dir=V3(P.x-B.x,0,P.z-B.z).normalize(),cp=tg.clone().addScaledVector(dir,1.1).add(V3(dir.z*.4,-.05,-dir.x*.4));
     camera.position.lerp(cp,k*.85);camera.lookAt(tg);camera.fov=lerp(45,30,k);camera.updateProjectionMatrix();CAMFX.on=true;}
   else if(CAMFX.on){camera.fov=45;camera.updateProjectionMatrix();CAMFX.on=false;}
   if(SHAKE.t>0){const k=SHAKE.t/.2*.09;camera.position.x+=(Math.random()-.5)*k;camera.position.y+=(Math.random()-.5)*k;camera.position.z+=(Math.random()-.5)*k;}
   deskPrompt(P);
+  meTag(P);
   const gn=(MT||CMP.on||SETUP.state==='run')?null:actNear(),ab=document.getElementById('hudAct');if(gn!==P.gn){P.gn=gn;ab.hidden=!gn;ab.textContent=actText(gn);}
   const free=!(MT||CMP.on||SIT.on||SETUP.state==='run'),sT=free?hurtTarget('slap'):null,kT=free?hurtTarget('kick'):null,sb=byId('hudSlap'),kb=byId('hudKick'),ib=byId('hudInvite'),gb=byId('hudBeg'),bd=free?smokeBuddy():null,bg=free?begTarget():null;
   if(!!sT!==!sb.hidden)sb.hidden=!sT;const kShow=!!kT&&kT.kind!=='thing';if(kShow!==!kb.hidden)kb.hidden=!kShow;
@@ -1608,7 +1696,7 @@ function wireUI(){
     b.addEventListener('click',()=>{if(mode==='walk'){player.x=z.sp[0];player.z=z.sp[1];return;}if(mode!=='orbit')setMode('orbit');setTimeout(()=>flyTo([z.c[0],0,z.c[1]],z.id==='bal'?[0,4.5,-4.5]:[2.8,4.6,4.8],1),0);});
     li.appendChild(b);zl.appendChild(li);}
   const KM={Space:'jump',KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',ShiftLeft:'run',ShiftRight:'run'};
-  addEventListener('keydown',e=>{if(mode!=='walk')return;if(e.code==='KeyE'){interact();return;}if(e.code==='KeyF'){doHurt('slap');return;}if(e.code==='KeyK'){doHurt('kick');return;}if(e.code==='KeyG'){if(player.buddy)sendSmokeInvite(player.buddy);return;}if(e.code==='KeyH'){if(player.begT)sendBeg(player.begT);return;}if(KM[e.code]){keys[KM[e.code]]=true;if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();}});
+  addEventListener('keydown',e=>{if(mode!=='walk')return;if(e.code==='KeyQ'){toggleActs();return;}if(e.code==='KeyE'){interact();return;}if(e.code==='KeyF'){doHurt('slap');return;}if(e.code==='KeyK'){doHurt('kick');return;}if(e.code==='KeyG'){if(player.buddy)sendSmokeInvite(player.buddy);return;}if(e.code==='KeyH'){if(player.begT)sendBeg(player.begT);return;}if(KM[e.code]){keys[KM[e.code]]=true;if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();}});
   addEventListener('keyup',e=>{if(KM[e.code])keys[KM[e.code]]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
   document.getElementById('hudAct').addEventListener('click',()=>interact());wireMatchUI();wireNetUI();wireBossUI();wireActionUI();
   const hold=(id,k)=>{const b=document.getElementById(id),on=e=>{e.preventDefault();keys[k]=true;try{b.setPointerCapture(e.pointerId);}catch(_){}},off=()=>{keys[k]=false;};
@@ -1659,6 +1747,16 @@ function initLogin(){
     const open=mins>=13*60+30&&mins<22*60;st.textContent=open?'🟢 অফিস চলছে (দুপুর ১:৩০ – রাত ১০টা)':'🔴 অফিস বন্ধ (খোলে দুপুর ১:৩০-এ)';};
   paint();const tick=setInterval(paint,1000);
   document.getElementById('forgot').addEventListener('click',()=>{shake();say('আপনার আইডি ELX দিয়ে শুরু, যেমন ELX 002। না মিললে এইচআর আপাকে মেইল করুন, সাথে একটা ওয়ার্নিং লেটার ফ্রি।','bad');});
+  // what happens once the server has said yes (a fresh login, or the session cookie from last time)
+  const welcome=(d,email)=>{
+      go.classList.remove('scan');sfx.play('ok');sfx.ambience(true);CLK.on=true;CLK.t=0;CLK.shown=-1;CLK.free=null;if(d.serverNow)NET.skew=d.serverNow-Date.now();startNet();const emp=d.employee,name=emp.name;
+      const nw=dhakaNow(),since=nw.h*60+nw.m-(13*60+30),late=since>0&&since<510?Math.min(59,since):0,role=roleFromDesignation(emp.designation);
+      say((late?'হাজিরা হয়েছে! আপনি '+BN(late)+' মিনিট লেট।':'হাজিরা হয়েছে! সময়মতো এসেছেন, বসের চোখ কপালে।')+' চাকরির মিটার থেকে '+BN(Math.min(20,Math.round(late/3)))+'% কাটা গেল।','ok');goTxt.textContent='স্বাগতম, '+name+'!';
+      try{if(document.getElementById('remember').checked)localStorage.setItem('cb-login',JSON.stringify({email}));else localStorage.removeItem('cb-login');}catch(e){}
+      window.CB_PLAYER={name,role,late,empId:emp.empId,designation:emp.designation,branch:emp.branch,department:emp.department,promise:document.getElementById('promise').checked};initProfile(emp);
+      setTimeout(()=>{clearInterval(tick);PAUSE3D=false;L.classList.add('out');setTimeout(()=>{L.hidden=true;toast((document.getElementById('promise').checked?'':'প্রতিজ্ঞা করেননি? বস লক্ষ্য করেছে। ')+'গেটের বাইরে আছেন। ফেস স্ক্যানারের কাছে গিয়ে E চাপুন।',6000);},600);
+        setPlayerModel(emp.gender,emp.model,emp.look);DESKOWN[emp.empId]=emp.desk;SETUP.state='bag';SETUP.told=false;addBag(player);setMode('walk');place(player,.3,-14.2,0);player.cam=Math.PI;},1300);
+  };
   const enter=(how)=>{const email=nm.value.trim();
     if(!email){shake();say('ইমেইল ছাড়া তো বেতনও আসবে না! আগে অফিসের ইমেইল লিখুন।','bad');nm.focus();return;}
     if(!pw.value.trim()){shake();say('এমপ্লয়ি আইডি ছাড়া ঢুকতে চান? আপনি কি সিইও?','bad');pw.focus();return;}
@@ -1669,16 +1767,12 @@ function initLogin(){
       .then(async r=>{let d=null;try{d=await r.json();}catch(e){}return {r,d};});
     Promise.all([wait,call]).then(([,{r,d}])=>{
       if(!r.ok||!d||!d.ok){fail(d&&d.error?d.error:'সার্ভারে সংযোগ হয়নি। `vercel dev` দিয়ে চালাচ্ছেন তো? কিছুক্ষণ পর আবার চেষ্টা করুন।');return;}
-      go.classList.remove('scan');sfx.play('ok');sfx.ambience(true);CLK.on=true;CLK.t=0;CLK.shown=-1;CLK.free=null;if(d.serverNow)NET.skew=d.serverNow-Date.now();startNet();const emp=d.employee,name=emp.name;
-      const nw=dhakaNow(),since=nw.h*60+nw.m-(13*60+30),late=since>0&&since<510?Math.min(59,since):0,role=roleFromDesignation(emp.designation);
-      say((late?'হাজিরা হয়েছে! আপনি '+BN(late)+' মিনিট লেট।':'হাজিরা হয়েছে! সময়মতো এসেছেন, বসের চোখ কপালে।')+' চাকরির মিটার থেকে '+BN(Math.min(20,Math.round(late/3)))+'% কাটা গেল।','ok');goTxt.textContent='স্বাগতম, '+name+'!';
-      try{if(document.getElementById('remember').checked)localStorage.setItem('cb-login',JSON.stringify({email}));else localStorage.removeItem('cb-login');}catch(e){}
-      window.CB_PLAYER={name,role,late,empId:emp.empId,designation:emp.designation,branch:emp.branch,department:emp.department,promise:document.getElementById('promise').checked};initProfile(emp);
-      setTimeout(()=>{clearInterval(tick);PAUSE3D=false;L.classList.add('out');setTimeout(()=>{L.hidden=true;toast((document.getElementById('promise').checked?'':'প্রতিজ্ঞা করেননি? বস লক্ষ্য করেছে। ')+'গেটের বাইরে আছেন। ফেস স্ক্যানারের কাছে গিয়ে E চাপুন।',6000);},600);
-        setPlayerModel(emp.gender,emp.model,emp.look);DESKOWN[emp.empId]=emp.desk;SETUP.state='bag';SETUP.told=false;addBag(player);setMode('walk');place(player,.3,-14.2,0);player.cam=Math.PI;},1300);
+      welcome(d,email);
     },()=>fail('নেটওয়ার্ক সমস্যা। আবার চেষ্টা করুন।'));};
   document.getElementById('lform').addEventListener('submit',e=>{e.preventDefault();enter('finger');});
   
+  // already signed in on this browser (the 90-day cookie)? then reloading doesn't throw you out
+  fetch('/api/login').then(r=>r.json().catch(()=>null)).then(d=>{if(!d||!d.ok||busy)return;busy=true;document.getElementById('promise').checked=true;go.disabled=true;go.classList.add('scan');goTxt.textContent='আঙুলের ছাপ পড়া হচ্ছে…';say('আবার স্বাগতম! আপনার হাজিরা আগেই মনে আছে।','');setTimeout(()=>welcome(d,d.employee.email||''),900);}).catch(()=>{});
   L.hidden=false;setTimeout(()=>{PAUSE3D=true;},1500);setTimeout(()=>{try{(nm.value?pw:nm).focus({preventScroll:true});}catch(e){}},300);}
 
 /* ================= shared clock ================= */
@@ -1779,6 +1873,7 @@ function modelSvg(g,m){const o=m.o,NS='http://www.w3.org/2000/svg',s=document.cr
   add('circle',{cx:16.6,cy:19,r:1,fill:'#1b1b1b'});add('circle',{cx:23.4,cy:19,r:1,fill:'#1b1b1b'});
   if(o.glasses){add('circle',{cx:16.6,cy:19,r:3,fill:'none',stroke:'#1b1b1b','stroke-width':1});add('circle',{cx:23.4,cy:19,r:3,fill:'none',stroke:'#1b1b1b','stroke-width':1});}
   return s;}
+let pickMode='real';const pickModeTable=()=>pickMode==='auto'?-2:-1;   // pool/carrom: -1 you play every shot yourself, -2 the computer plays it out
 let MT=null,RET=[],EMPS=null,pickGame='pool',pickDining=false,pickTable=-1,pickSel=[];
 const GAMEDEF={
   pool:{bn:'পুল',em:'🎱',max:1},carrom:{bn:'ক্যারম',em:'🎯',max:1},
@@ -1828,6 +1923,130 @@ function updTips(dt){const w=stage.clientWidth,h=stage.clientHeight;
 /* ---- starting: walk up to a table, press E ---- */
 const DTABLES=[-8.2,-5.65,-4.35,-3.05,-1.75,-.45].map(z=>({x:15.95,z}));
 function diningNear(){if(MT||lastZone!=='dine'||!player)return-1;let b=-1,bd=1.75;DTABLES.forEach((t,i)=>{const d=Math.hypot(player.x-t.x,player.z-t.z);if(d<bd){bd=d;b=i;}});return b;}
+/* ================= activities: smoke anywhere, sleep, sing, watch a movie, make tea or coffee, and a few more ================= */
+// Some of them are against the rules: HR cuts the employment rating and sends an apology letter (the server decides how much).
+const ACT={kind:null,t:0,pen:false,cup:null,snd:0,say:0,sm:0,st:0,cool:{}};
+const SMOKE_OK=z=>z==='bal'||z==='stairs';
+const KITCHEN=[16.55,-9.3],ACT_STAND=['sing','dance','stretch','make'];
+const ACTS=[
+  {k:'smoke',em:'🚬',bn:'সিগারেট ধরান',note:'বারান্দা বা সিঁড়ি ছাড়া অন্য জায়গায় ধরলে রেটিং কমবে'},
+  {k:'invite',em:'🤝',bn:'কাছের কাউকে সিগারেটে ডাকুন',note:'সামনে কেউ থাকলে'},
+  {k:'sleep',em:'😴',bn:'ঘুমান',note:'ধরা পড়লে রেটিং কমবে'},
+  {k:'sing',em:'🎤',bn:'গান গান',note:'অফিসে গান? রেটিং কমবে'},
+  {k:'movie',em:'🎬',bn:'সিনেমা দেখুন',note:'বস, এইচআর বা ম্যানেজার হলে ক্ষমা চাইতে হবে'},
+  {k:'tea',em:'🍵',bn:'চা বানান',note:'ডাইনিংয়ের কিচেন কাউন্টারে গিয়ে'},
+  {k:'coffee',em:'☕',bn:'কফি বানান',note:'ডাইনিংয়ের কিচেন কাউন্টারে গিয়ে'},
+  {k:'drink',em:'🥤',bn:'চা/কফি খান',note:'হাতে কাপ থাকলে। ডেস্কে বসলে নিজেই খাওয়া শুরু হয়'},
+  {k:'dance',em:'💃',bn:'নাচুন'},
+  {k:'stretch',em:'🧘',bn:'স্ট্রেচ করুন'},
+  {k:'call',em:'📞',bn:'ফোনে কথা বলুন'},
+  {k:'selfie',em:'🤳',bn:'সেলফি তুলুন'}];
+const ACT_TXT={sleep:'😴 ঘুমাচ্ছে',sing:'🎤 গান গাইছে',movie:'🎬 সিনেমা দেখছে',make:'☕ চা/কফি বানাচ্ছে',drink:'☕ চা/কফি খাচ্ছে',dance:'💃 নাচছে',stretch:'🧘 স্ট্রেচ করছে',call:'📞 ফোনে কথা বলছে',selfie:'🤳 সেলফি তুলছে'};
+const LYRICS=['🎵 আমি ডেডলাইন ভালোবাসি, ডেডলাইন আমারে… 🎵','🎵 ও আমার বস, ও আমার বস, ইনক্রিমেন্ট দিয়া যাও… 🎵','🎵 চাকরি আমার জান, বেতন আমার মান… 🎵','🎵 এক যে ছিল ডেভেলপার, বাগ ছিল তার হাজার… 🎵'];
+const CALLS=['হ্যাঁ হ্যাঁ, ক্লায়েন্ট, আমি এখনই করে দিচ্ছি!','নেটওয়ার্ক খারাপ, আপনার কথা শোনা যাচ্ছে না!','না না, ডেপ্লয় তো গতকালই হয়েছে!','আচ্ছা মা… হ্যাঁ, ভাত খেয়েছি।'];
+const isBoss=()=>{const c=window.CB_PLAYER||{},d=String(c.designation||'').toLowerCase();return c.role==='ceo'||c.role==='hr'||/manager|director|head of|chief/.test(d);};
+const nearKitchen=()=>lastZone==='dine'&&Math.hypot(player.x-KITCHEN[0],player.z-KITCHEN[1])<1.2;
+function nearRemote(){let best=null,bd=3;for(const r of NET.remote.values()){if(!r.P.root.visible||!r.p.inOffice)continue;const d=Math.hypot(r.x-player.x,r.z-player.z);if(d<bd){bd=d;best=r;}}return best;}
+// little props that hang on a hand
+function ensureCup(P,type){const col=type==='coffee'?'#3a2416':'#b5733a';
+  if(!P.cupG){const g=P.gp(P.J.rHand,0,-.09,.025);P.pm(g,cylG(.032,.025,.065,14),mat('#f7f5ef',.3),0,0,0);P.cupL=P.pm(g,cylG(.029,.029,.004,14),mat(col,.3),0,.026,0);P.cupG=g;}
+  else P.cupL.material=mat(col,.3);P.cupG.visible=true;return P.cupG;}
+function ensureMic(P){if(!P.micG){const g=P.gp(P.J.rHand,0,-.08,.03);P.pm(g,cylG(.011,.014,.13,10),mat('#222',.4),0,0,0);P.pm(g,US,mat('#b8bcc2',.3,.8),0,.075,0,.032,.032,.032);P.micG=g;}P.micG.visible=true;}
+function ensurePhone(P,hand){const k='ph'+hand;if(!P[k]){const g=P.gp(P.J[hand],0,-.085,.03);P.pm(g,UB,mat('#15161a',.3,.2),0,0,0,.07,.14,.009);P.pm(g,UB,new THREE.MeshBasicMaterial({color:lin('#8fb8e6')}),0,0,.005,.062,.128,.002);P[k]=g;}P[k].visible=true;}
+function hideProps(P,keep){if(P.micG&&keep!=='sing')P.micG.visible=false;if(P.cupG&&keep!=='drink'&&!(P===player&&ACT.cup))P.cupG.visible=false;if(P.phrHand&&keep!=='call')P.phrHand.visible=false;if(P.phlHand&&keep!=='selfie')P.phlHand.visible=false;}
+function holdCupPose(P){const J=P.J;ensureCup(P,ACT.cup?ACT.cup.type:'tea');J.rSh.rotation.set(-.85,0,.15);J.rEl.rotation.x=-1.35;}
+// every activity pose; s = seconds since it began, seated = on a chair (so the legs are bent)
+function actPoseFor(P,kind,seated,s,t,dt){rest(P);const J=P.J;
+  if(seated){sit(P,.46);J.spine.rotation.x=.18;J.neck.rotation.x=.22;}
+  P.root.updateMatrixWorld(true);hideProps(P,kind);
+  switch(kind){
+    case'sleep':
+      if(seated){J.spine.rotation.x=1.0;J.neck.rotation.x=.55;J.head.rotation.x=.35;J.head.rotation.z=.25;J.lSh.rotation.set(-1.35,0,.25);J.lEl.rotation.x=-.5;J.rSh.rotation.set(-1.35,0,-.25);J.rEl.rotation.x=-.5;}
+      else{J.lSh.rotation.set(-.5,0,-.15);J.lEl.rotation.x=-1.9;J.rSh.rotation.set(-.5,0,.15);J.rEl.rotation.x=-1.9;J.neck.rotation.x=.1;}
+      J.spine.rotation.x+=Math.sin(t*1.6)*.02;talk(P,t,Math.sin(t*1.2)>.6);break;
+    case'sing':ensureMic(P);J.rSh.rotation.set(-1.25,0,.1);J.rEl.rotation.x=-1.75;J.lSh.rotation.set(-.4+Math.sin(t*2.2)*.5,0,-.55);J.lEl.rotation.x=-.5;
+      J.neck.rotation.x=-.15;J.spine.rotation.x=-.06;J.hips.rotation.z=Math.sin(t*1.8)*.05;J.lKn.rotation.x=.08+Math.max(0,Math.sin(t*1.8))*.12;talk(P,t,true);break;
+    case'dance':{const b=Math.sin(t*5.2),d=Math.abs(b);J.hips.position.y+=d*.045;J.hips.rotation.z=b*.12;J.spine.rotation.y=Math.sin(t*2.6)*.45;J.spine.rotation.z=-b*.08;
+      J.lSh.rotation.set(-2.5+b*.5,0,.45);J.lEl.rotation.x=-.5-d*.4;J.rSh.rotation.set(-2.5-b*.5,0,-.45);J.rEl.rotation.x=-.5-d*.4;J.lKn.rotation.x=.25*d+.1;J.rKn.rotation.x=.25*(1-d)+.1;J.neck.rotation.z=b*.12;talk(P,t,Math.sin(t*3)>.4);break;}
+    case'stretch':{const c=s%9;
+      if(c<5){const u=ease(c<1?c:1);J.lSh.rotation.set(-3.0*u,0,.2);J.rSh.rotation.set(-3.0*u,0,-.2);J.lEl.rotation.x=-.2*u;J.rEl.rotation.x=-.2*u;J.spine.rotation.z=Math.sin(c*1.3)*.28*u;J.neck.rotation.x=-.15*u;}
+      else{const u=ease(Math.min(1,(c-5)/1.4))*(c>8?1-ease(c-8):1);J.spine.rotation.x=1.15*u;J.neck.rotation.x=.3*u;J.lSh.rotation.set(-1.3*u,0,.05);J.rSh.rotation.set(-1.3*u,0,-.05);J.lHip.rotation.x=-.2*u;J.rHip.rotation.x=-.2*u;}
+      break;}
+    case'call':{ensurePhone(P,'rHand');const mo=mouthW(P),side=J.rHand.getWorldPosition(V3(0,0,0)).sub(mo);side.y=0;side.normalize();
+      armIK(P,'r',mo.addScaledVector(side,.1).add(V3(0,.03,0)),PTR);J.rHand.rotation.set(0,0,-.4);J.neck.rotation.z=-.12;
+      J.lSh.rotation.set(-.3,0,-.2+Math.sin(t*1.5)*.08);J.lEl.rotation.x=-.9;if(!seated){J.hips.rotation.z=Math.sin(t*.9)*.03;}talk(P,t,Math.sin(t*2.3)>-.2);break;}
+    case'selfie':{ensurePhone(P,'lHand');armIK(P,'l',mouthW(P).addScaledVector(fwdOf(P),.46).add(V3(0,.1,0)),PTL);J.lHand.rotation.set(-.8,0,0);
+      J.rSh.rotation.set(-2.3,0,-.55);J.rEl.rotation.x=-.6;J.neck.rotation.z=.14;J.neck.rotation.x=-.05;J.hips.rotation.z=Math.sin(t*.8)*.03;break;}
+    case'movie':{J.lSh.rotation.set(-.5,0,-.1);J.lEl.rotation.x=-1.2;J.spine.rotation.x=(seated?-.08:0);J.neck.rotation.x=-.04;J.head.rotation.y=Math.sin(t*.3)*.05;
+      const c=s%3.6,u=c<.8?ease(c/.8):c<1.5?1-ease((c-.8)/.7):0,h0=J.rHand.getWorldPosition(V3(0,0,0));armIK(P,'r',h0.lerp(mouthW(P).addScaledVector(fwdOf(P),.05).add(V3(0,-.05,0)),u),PTR);   // popcorn
+      const lc=s%11;if(lc>8.5){J.spine.rotation.x+=Math.sin(t*16)*.04;J.neck.rotation.x+=Math.sin(t*16)*.05;talk(P,t,true);}break;}
+    case'drink':{ensureCup(P,(P===player&&ACT.cup)?ACT.cup.type:'tea');const c=s%4.6,u=c<1?ease(c):c<2.6?1:c<3.6?1-ease(c-2.6):0,h0=J.rHand.getWorldPosition(V3(0,0,0));
+      armIK(P,'r',h0.lerp(mouthW(P).addScaledVector(fwdOf(P),.06).add(V3(0,-.05,0)),u),PTR);J.rHand.rotation.set(-.5*u,0,0);J.neck.rotation.x+=-.22*u;J.lSh.rotation.set(-.3,0,-.15);J.lEl.rotation.x=-.8;break;}
+    case'make':{J.spine.rotation.x=.22;J.neck.rotation.x=.4;ensureCup(P,'tea');
+      J.rSh.rotation.set(-.95+Math.sin(s*5)*.12,0,.22+Math.cos(s*5)*.12);J.rEl.rotation.x=-.65;J.lSh.rotation.set(-.85,0,-.1);J.lEl.rotation.x=-.45;break;}
+  }
+}
+function beginAct(kind,type){const P=player;ACT.kind=kind;ACT.t=0;ACT.pen=false;ACT.snd=0;ACT.say=0;ACT.sips=0;ACT.type=type||'tea';
+  if(kind==='make'){const f=nearFree(KITCHEN[0],KITCHEN[1]);P.x=KITCHEN[0];P.z=KITCHEN[1];P.yaw=Math.PI;sfx.play('pour');}
+  const T={sleep:'😴 ঘুমিয়ে পড়লেন… (বস দেখলে বিপদ!)',sing:'🎤 গলা ছেড়ে দিলেন, সবাই শুনছে!',movie:isBoss()?'🎬 সিনেমা শুরু। আপনি কিন্তু বস, ঝুঁকি আছে!':'🎬 সিনেমা শুরু, পপকর্ন হাতে 🍿',dance:'💃 নাচ শুরু!',stretch:'🧘 আহ, কোমরটা ছাড়াই',call:'📞 ফোনে কথা শুরু',selfie:'🤳 হাসুন!',make:'আপনার '+(ACT.type==='coffee'?'কফি':'চা')+' তৈরি হচ্ছে…'};
+  if(T[kind])toast(T[kind],3000);}
+function startAct(kind){if(MT||CMP.on||SETUP.state==='run'||!window.CB_PLAYER||mode!=='walk')return;
+  if(kind==='smoke'){if(SIT.on)standUp();if(ACT.kind)stopAct(true);startSmoke(null,false);return;}
+  if(kind==='invite'){const r=nearRemote();if(!r){toast('কাছে কেউ নেই। কারও পাশে গিয়ে ডাকুন।',3000);return;}if(SIT.on)standUp();sendSmokeInvite(r);return;}
+  if((kind==='tea'||kind==='coffee')&&!nearKitchen()){toast('চা-কফি বানাতে ডাইনিংয়ের কিচেন কাউন্টারে যান ☕ (কাউন্টারের সামনে দাঁড়ান)',3800);return;}
+  if(kind==='drink'&&!ACT.cup){toast('হাতে কাপ নেই। আগে কিচেনে গিয়ে চা বা কফি বানান।',3500);return;}
+  if(SMOKE.on)stopSmoke(false);if(ACT.kind)stopAct(true);
+  const k=kind==='tea'||kind==='coffee'?'make':kind;if(ACT_STAND.includes(k)&&SIT.on)standUp();
+  beginAct(k,kind==='coffee'?'coffee':'tea');}
+function stopAct(silent){if(!ACT.kind)return;const P=player,was=ACT.kind;ACT.kind=null;hideProps(P,'');P.root.rotation.x=0;
+  if(was==='make'&&!silent)toast('চা-কফি বানানো আধাআধি রেখে চলে এলেন 😅',2500);}
+async function penalize(kind){const now=performance.now();if((ACT.cool[kind]||0)>now)return;ACT.cool[kind]=now+60000;
+  const d=await api('/api/slap',{action:'act',kind});
+  if(d&&d.ok){if(PROFILE)PROFILE.employment=d.employment;showLetter(kind,'',d.before,d.employment,d.delta);}else if(d&&d.error)toast(d.error,3000);}
+function actTick(P,dt,m){
+  // smoking is fine on the balcony and the stairs, and nowhere else (alone or with a friend)
+  const smk=SMOKE.on||(PAIR.on&&PAIR.ready);
+  if(smk&&!SMOKE_OK(lastZone)){ACT.sm+=dt;if(ACT.sm>4){ACT.sm=-1e9;penalize('smoke');}}else if(!smk)ACT.sm=0;
+  // a cup of tea in your hand steams, and once you sit down at a desk you drink it
+  if(ACT.cup){if(!P.cupG||ACT.kind!=='drink')ensureCup(P,ACT.cup.type);ACT.st-=dt;if(ACT.st<=0&&!MT){ACT.st=.45;P.cupG.getWorldPosition(_v);puff(_v.add(V3(0,.05,0)),.018,1.1,V3(0,.16,0),.5);}
+    if(SIT.on&&SIT.t>1.2&&!ACT.kind&&!CMP.on)beginAct('drink');}
+  else if(P.cupG&&!ACT.kind)P.cupG.visible=false;
+  if(!ACT.kind)return;ACT.t+=dt;const k=ACT.kind,s=ACT.t;
+  if(!SIT.on&&s>.5&&(m>.3||keys.jump)){stopAct();return;}
+  if(k==='sleep'){ACT.snd-=dt;if(ACT.snd<=0){ACT.snd=3.4;sfx.play('snore');tmpBubble(P,'💤 ঘ্‌র্‌র্‌র্‌…',2.2);}if(s>7&&!ACT.pen){ACT.pen=true;penalize('sleep');}}
+  else if(k==='sing'){ACT.snd-=dt;if(ACT.snd<=0){ACT.snd=5.2;sfx.play('sing');tmpBubble(P,LYRICS[Math.floor(Math.random()*LYRICS.length)],4.2);}if(s>5&&!ACT.pen){ACT.pen=true;penalize('sing');}}
+  else if(k==='movie'){ACT.snd-=dt;if(ACT.snd<=0){ACT.snd=11;if(s>8)sfx.play('laugh');tmpBubble(P,s>8?'😂 হা হা হা!':'🎬 🍿',2.2);}if(isBoss()&&s>8&&!ACT.pen){ACT.pen=true;penalize('movie');}}
+  else if(k==='dance'){ACT.snd-=dt;if(ACT.snd<=0){ACT.snd=2;sfx.play('dance');}}
+  else if(k==='call'){ACT.snd-=dt;if(ACT.snd<=0){ACT.snd=5;tmpBubble(P,CALLS[Math.floor(Math.random()*CALLS.length)],3.4);}}
+  else if(k==='selfie'){ACT.snd-=dt;if(ACT.snd<=0){ACT.snd=3;sfx.play('shutter');tmpBubble(P,'📸 ক্লিক!',1.2);}}
+  else if(k==='make'){ACT.st-=dt;if(ACT.st<=0){ACT.st=.25;puff(V3(KITCHEN[0],1.02,KITCHEN[1]-.8),.03,1.4,V3(0,.2,0),.45);}
+    if(s>5.4){ACT.cup={type:ACT.type,sips:0};ensureCup(P,ACT.type);ACT.kind=null;sfx.play('pop');toast('আপনার '+(ACT.type==='coffee'?'কফি':'চা')+' তৈরি! ☕ এবার নিজের ডেস্কে গিয়ে বসে চুমুক দিন 😋',4500);}}
+  else if(k==='drink'){const n=Math.floor((s+2.6)/4.6);if(n>ACT.sips){ACT.sips=n;sfx.play('sip');puff(mouthW(P).addScaledVector(fwdOf(P),.08),.02,1,V3(0,.15,0),.4);}
+    if(ACT.sips>=3&&s%4.6>3.7){const ty=ACT.cup?ACT.cup.type:'tea';ACT.cup=null;if(P.cupG)P.cupG.visible=false;ACT.kind=null;toast((ty==='coffee'?'কফি':'চা')+' শেষ! আহ, মনটা ফুরফুরে ☕',3200);}}
+}
+// the activity menu
+function actMenuItems(){return ACTS.map(a=>{let off='';
+  if((a.k==='tea'||a.k==='coffee')&&!nearKitchen())off='কিচেন কাউন্টারের সামনে যান';else if(a.k==='drink'&&!ACT.cup)off='হাতে কাপ নেই';else if(a.k==='invite'&&!nearRemote())off='কাছে কেউ নেই';return Object.assign({off},a);});}
+function renderActs(){const L=byId('mactList');L.textContent='';
+  for(const a of actMenuItems()){const b=document.createElement('button');b.type='button';b.className='actb';b.disabled=!!a.off;
+    const e=document.createElement('span');e.textContent=a.em;const n=document.createElement('b');n.textContent=a.bn;const sm=document.createElement('small');sm.textContent=a.off||a.note||'';b.append(e,n,sm);
+    b.addEventListener('click',()=>{byId('mact').hidden=true;startAct(a.k);});L.appendChild(b);}
+  byId('mactStop').hidden=!(ACT.kind||SMOKE.on);}
+function toggleActs(){const el=byId('mact');if(mode!=='walk'||MT||CMP.on){return;}if(el.hidden){renderActs();el.hidden=false;for(const k in keys)keys[k]=false;}else el.hidden=true;}
+function wireActs(){const el=byId('mact');byId('actbtn').addEventListener('click',toggleActs);byId('mactClose').addEventListener('click',()=>{el.hidden=true;});
+  byId('mactStop').addEventListener('click',()=>{el.hidden=true;if(SMOKE.on)stopSmoke(false);stopAct();});
+  el.addEventListener('click',e=>{if(e.target===el)el.hidden=true;});for(const t of['keydown','keyup'])el.addEventListener(t,e=>e.stopPropagation());
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!el.hidden){e.stopPropagation();el.hidden=true;}},true);}
+Object.assign(LET,{
+  smoke:[{t:'শো-কজ: ধোঁয়ার হিসাব দিন',b:'প্রতি: {name}\n\nআপনাকে অনুমোদিত জায়গার (বারান্দা বা সিঁড়ি) বাইরে সিগারেট ধরাতে দেখা গেছে। স্মোক-ডিটেক্টর আপনার ওপর ভীষণ অভিমান করেছে, আর এইচআর আপার চশমাও ধোঁয়ায় ঝাপসা।\n\nতিন কর্মদিবসের মধ্যে লিখিতভাবে জানান, "আমি আর বারান্দা-সিঁড়ি ছাড়া অন্য কোথাও ধোঁয়া ছাড়ব না।"',s:'ইতি, এইচআর বিভাগ (নাকে রুমাল দিয়ে)'},
+         {t:'সতর্কবার্তা: ধূমপান বিষয়ক',b:'প্রিয় {name},\n\nঅফিসের ভেতরে আপনার সিগারেটের ধোঁয়া দেখে ফায়ার অ্যালার্ম নাকি একটু হাঁচি দিয়েছে। ধূমপানের জন্য বারান্দা আর সিঁড়ি আছে, অফিসটা তাদের মতো খোলামেলা না।\n\nক্ষমা না চাইলে পরের বার সিগারেটের বদলে আপনার রেটিং ধোঁয়ায় উড়ে যাবে।',s:'শুভকামনায়, এইচআর আপা 🚭'}],
+  sleep:[{t:'কারণ দর্শাও: কর্মঘণ্টায় নিদ্রা',b:'প্রতি: {name}\n\nআপনাকে অফিস চলাকালীন গভীর নিদ্রায় পাওয়া গেছে। আপনার নাক-ডাকার শব্দে পাশের সহকর্মীর কিবোর্ড তাল হারিয়ে ফেলেছে। ঘুম অফিসের বাইরের বিষয়, অফিসে আমরা শুধু স্বপ্নে প্রজেক্ট ডেলিভারি করি।\n\nকেন আপনাকে জাগানো উচিত নয়, তা জানান।',s:'ইতি, এইচআর বিভাগ ☕ (জেগে আছি)'},
+         {t:'সতর্কবার্তা: নাক-ডাকা কাণ্ড',b:'প্রিয় {name},\n\nআপনার ঘুমের ছবি ইতিমধ্যে অফিসের গ্রুপে ঘুরছে। আমরা এটাকে "অনানুষ্ঠানিক রেস্ট ব্রেক" ধরতে পারছি না, কারণ ব্রেক সাধারণত ১৫ মিনিটের হয়, ঘণ্টার না।\n\nপরের বার ঘুম পেলে চা বানিয়ে খান, কফিতে ঘুম কাটে।',s:'শুভকামনায়, এইচআর আপা 😴'}],
+  sing:[{t:'শো-কজ: সুরের অত্যাচার',b:'প্রতি: {name}\n\nঅফিসে আপনি এমন গলা ছেড়ে গান গেয়েছেন যে ওয়াটার ডিসপেনসারের পানি কেঁপে উঠেছে। আপনার গানের ভক্ত থাকতে পারে, কিন্তু অফিসে তাদের কেউ হেডফোন আনেননি।\n\nঅফিসের নীরবতা-নীতি ভঙ্গের কারণ ব্যাখ্যা করুন।',s:'ইতি, এইচআর বিভাগ (কানে তুলো দিয়ে)'},
+         {t:'সতর্কবার্তা: অনুমতিহীন কনসার্ট',b:'প্রিয় {name},\n\nআপনি অফিসে বিনা টিকিটে কনসার্ট করেছেন। আমরা টিকিটের টাকা চাই না, শুধু চাই এই সুরেলা অপরাধ আর না ঘটুক। আপনার প্রতিভা অস্বীকার করছি না, কিন্তু সুর-তাল বাথরুমে মানায়।',s:'শুভকামনায়, এইচআর আপা 🎤'}],
+  movie:[{t:'ক্ষমাপ্রার্থনা-পত্র: বসের সিনেমা দেখা',b:'প্রতি: {name}\n\nআপনি দায়িত্বশীল পদে থেকেও কর্মঘণ্টায় সিনেমা দেখেছেন, আর পপকর্নের গন্ধ পুরো ফ্লোরে ছড়িয়ে গেছে। কর্মীরা জিজ্ঞেস করছে, "স্যার/ম্যাম দেখলে আমরা কেন নয়?"\n\nদৃষ্টান্ত স্থাপন করুন, আর কর্মীদের কাছে ক্ষমা চান।',s:'ইতি, অফিস নৈতিকতা কমিটি 🍿'},
+         {t:'সতর্কবার্তা: পদের মর্যাদা',b:'{name},\n\nআপনার ল্যাপটপের স্ক্রিনে নাকি সুপারহিরো ঝগড়া করছিল, আর আপনি "মিটিং-এ আছি" বলে বসে ছিলেন। বসদের সিনেমা দেখা সাধারণ কর্মীর চেয়ে বেশি চোখে পড়ে, কারণ সবাই তাকিয়ে থাকে।\n\nআপনাকে ক্ষমা চাইতে হবে, আর পরের বার ইন্টারভ্যালে পপকর্ন সবাইকে ভাগ করে দিতে হবে।',s:'—আপনার শুভাকাঙ্ক্ষী এইচআর'}]});
+
 function tableNear(){if(MT)return null;
   if(SIT.on)return'stand';if(SETUP.state==='run')return null;if(chairNear())return'sit';
   if(lastZone==='bal')return SMOKE.on?'smokeStop':'smoke';
@@ -1854,7 +2073,7 @@ function renderPick(){const q=byId('mpickQ').value.trim().toLowerCase(),L=byId('
     const tx=document.createElement('span');tx.className='ctx';const n=document.createElement('b');n.textContent=e.name+(e.nickname?' ('+e.nickname+')':'');const s=document.createElement('small');s.textContent=isOn(e)&&e.act?e.act:(e.designation||e.department||'');tx.append(n,s);
     const xp=document.createElement('em');xp.textContent='⭐ '+bnd(ratingOf(e,pickGame));b.append(dot,av,tx,xp);
     b.addEventListener('click',()=>{
-      if(!pickDining&&max===1){closePick();beginInvite([e],pickGame,-1);return;}
+      if(!pickDining&&max===1){closePick();beginInvite([e],pickGame,pickModeTable());return;}
       const i=pickSel.indexOf(e.empId);if(i>=0)pickSel.splice(i,1);else if(pickSel.length<max)pickSel.push(e.empId);else{toast('এই খেলায় সর্বোচ্চ '+bnd(max)+' জনকে ডাকা যায়।',2200);return;}
       renderPick();});
     L.appendChild(b);}
@@ -1863,9 +2082,10 @@ function renderGameTabs(){const T=byId('mgames');T.textContent='';
   for(const g of['uno','chess','ludo']){const b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed',String(g===pickGame));b.textContent=GAMEDEF[g].em+' '+GAMEDEF[g].bn;
     b.addEventListener('click',()=>{pickGame=g;pickSel=pickSel.slice(0,GAMEDEF[g].max);renderGameTabs();renderPick();});T.appendChild(b);}}
 function closePick(){byId('mpick').hidden=true;}
+function paintMode(){for(const b of byId('mmode').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.m===pickMode));}
 async function openPicker(game,dining){if(MT)return;pickGame=game;pickDining=!!dining;pickSel=[];pickTable=dining?diningNear():-1;for(const k in keys)keys[k]=false;
   byId('mpickTitle').textContent=dining?'কার সাথে খেলবেন?':GAMEDEF[game].bn+' খেলতে কাকে ডাকবেন?';byId('mpickQ').value='';byId('mlist').textContent='লোড হচ্ছে…';
-  byId('mgames').hidden=!dining;byId('mpickFoot').hidden=!dining;if(dining)renderGameTabs();byId('mpick').hidden=false;
+  byId('mgames').hidden=!dining;byId('mmode').hidden=!!dining;pickMode='real';paintMode();byId('mpickFoot').hidden=!dining;if(dining)renderGameTabs();byId('mpick').hidden=false;
   try{const r=await fetch('/api/employees'),d=await r.json();if(!r.ok||!d.ok)throw new Error(d&&d.error);EMPS=d.employees;renderPick();}
   catch(e){byId('mlist').textContent='সহকর্মীদের তালিকা আনা যায়নি। আবার চেষ্টা করুন।';}}
 
@@ -1980,12 +2200,16 @@ function beginPool(m){const S=POOL,T=S.T,[A,B]=m.parts;
   S.breaker=S.shooter=SRP()<.5?0:1;for(const P of[A,B]){P.path=[];P.cheer=0;P.speed=1.05;}place(A,S.wait[0][0],S.wait[0][1],Math.PI/2);place(B,S.wait[1][0],S.wait[1][1],-Math.PI/2);
   S.state='plan';S.t=0;S.msg=PN[S.breaker]+' ব্রেক করবে।';m.limit=720;m.camPos=new THREE.Vector3(-1,3.5,2.8);m.camTo=new THREE.Vector3(3.2,.5,5.3);m.camDef=[m.camPos.clone(),m.camTo.clone()];
   // real shots: the players aim and shoot, everything else is replayed from the shared move log
+  if(m.table===-2)return;   // auto mode: the computer plays both sides
   m.turnPool=true;m.humans=m.ids.map((id,i)=>i===m.meIdx||(m.live&&!(m.simIds||[]).includes(id)));m.moves=m.moves||[];m.mIdx=0;m.acc=0;m.blocked=false;m.waitSince=null;m.autoFor=-1;m.pui=null;m.limit=1800;}
 function endPool(m){const S=POOL;poolAimOff(m);SRP=Math.random;S.players=m.saved.players;PN[0]=m.saved.pn[0];PN[1]=m.saved.pn[1];S.players.forEach(p=>{p.root.visible=true;p.path=[];});AMB.p.needs=true;}
 function resetCoins(S){for(const c of S.coins){c.on=true;c.mesh.visible=true;c.x=c.home[0];c.z=c.home[1];c.vx=c.vz=0;}S.striker.on=true;S.striker.mesh.visible=true;S.striker.vx=S.striker.vz=0;S.cp=null;S.hit=false;S.over=false;S.turn=0;S.state='place';S.t=0;S.buzz=0;S.shot=null;S.T.potted=[];}
 function beginCarrom(m){const S=CARROM,T=S.T,[A,B]=m.parts;
   m.saved={players:S.players};S.players.forEach(p=>{p.root.visible=false;});S.players=[A,S.players[1],B,S.players[3]];S.skip=[1,3];S.sc=[0,0,0,0];SRC=mulberry32(m.seed);
-  resetCoins(S);for(const P of[A,B]){P.cheer=0;P.speed=1.05;}place(A,T.cx,T.cz+.72,Math.PI);place(B,T.cx,T.cz-.72,0);m.limit=480;m.camPos=new THREE.Vector3(.7,2.8,3.3);m.camTo=new THREE.Vector3(-1.8,.7,5);}
+  resetCoins(S);for(const P of[A,B]){P.cheer=0;P.speed=1.05;}place(A,T.cx,T.cz+.72,Math.PI);place(B,T.cx,T.cz-.72,0);m.limit=480;m.camPos=new THREE.Vector3(.7,2.8,3.3);m.camTo=new THREE.Vector3(-1.8,.7,5);m.camDef=[m.camPos.clone(),m.camTo.clone()];
+  S.state='place';S.forceAuto=false;S.humanShot=false;
+  if(m.table===-2)return;   // auto mode: the computer plays both sides
+  m.turnPool=true;m.humans=m.ids.map((id,i)=>i===m.meIdx||(m.live&&!(m.simIds||[]).includes(id)));m.moves=m.moves||[];m.mIdx=0;m.acc=0;m.blocked=false;m.waitSince=null;m.autoFor=-1;m.pui=null;m.limit=1800;}
 function endCarrom(m){const S=CARROM;SRC=Math.random;S.players=m.saved.players;S.players.forEach(p=>{p.root.visible=true;});S.skip=null;S.sc=null;AMB.c.needs=true;}
 
 /* ---- dining table games: board, pieces and cards on the table ---- */
@@ -2262,17 +2486,17 @@ function diningStep(m,dt){if(m.turnGame)return turnStep(m,dt);const sim=m.sim,ta
 const TABLE_SPEED=2.5;   // pool and carrom play at 2.5x so a full game takes a couple of minutes to watch; every screen uses the same factor
 const POOL_SECS=30;
 // the pool match with real shots: the simulation only runs while it has something to do, and waits for the shooter's move otherwise
-function poolStep(m,dt){const S=POOL;
-  const fast=S.state==='plan'||S.state==='walk'||S.state==='turn'||S.state==='over';
+function poolStep(m,dt){const pool=m.game==='pool',S=pool?POOL:CARROM,upd=pool?poolUpdate:carromUpdate;
+  const fast=pool?(S.state==='plan'||S.state==='walk'||S.state==='turn'||S.state==='over'):S.state==='place';
   m.acc=Math.min(m.acc+dt*60*(fast?2:1),30);m.blocked=false;let k=0;
-  while(m.acc>=1&&!m.blocked&&k++<60){m.acc--;m.simN++;poolUpdate(m.simN/60,1/60);tableTalk(m);}
+  while(m.acc>=1&&!m.blocked&&k++<60){m.acc--;m.simN++;upd(m.simN/60,1/60);tableTalk(m);}
   if(m.blocked)m.acc=0;m.watching=true;
-  const waiting=S.state==='await',mine=waiting&&S.shooter===m.meIdx,now=performance.now();
+  const who=pool?S.shooter:S.turn>>1,waiting=S.state==='await',mine=waiting&&who===m.meIdx,now=performance.now();
   if(!waiting){if(m.waitSince!=null){m.waitSince=null;m.pui=null;poolAimOff(m);byId('poolui').hidden=true;}
     if(m.camDef){m.camPos.copy(m.camDef[0]);m.camTo.copy(m.camDef[1]);}return;}
   if(m.waitSince==null){m.waitSince=now;m.autoFor=-1;m.pui=mine?poolAimInit(m):null;}
   const idle=(now-m.waitSince)/1000,left=Math.max(0,Math.ceil(POOL_SECS-idle));
-  if(m.autoFor!==m.moves.length&&((mine&&idle>POOL_SECS)||(!mine&&assistIdx(m,S.shooter)===m.meIdx&&idle>POOL_SECS+6))){m.autoFor=m.moves.length;postMove(m,{auto:1},S.shooter);}
+  if(m.autoFor!==m.moves.length&&((mine&&idle>POOL_SECS)||(!mine&&assistIdx(m,who)===m.meIdx&&idle>POOL_SECS+6))){m.autoFor=m.moves.length;postMove(m,{auto:1},who);}
   if(mine&&m.pui)poolAimTick(m,dt,left);else{poolAimOff(m);byId('poolui').hidden=true;}}
 function tableStep(m,dt){if(m.turnPool)return poolStep(m,dt);const target=Math.floor((nowMs(m)-m.startAt)/1000*60*TABLE_SPEED);let k=0;
   while(m.simN<target&&m.simN<m.limit*60&&k++<400){m.simN++;(m.game==='pool'?poolUpdate:carromUpdate)(m.simN/60,1/60);m.watching=target-m.simN<20;tableTalk(m);}}
@@ -2288,6 +2512,8 @@ function startPlay(){const m=MT,me=PROFILE.empId;
   byId('mhud').hidden=false;byId('mhT').textContent=GAMEDEF[m.game].em+' '+GAMEDEF[m.game].bn+' · '+m.pnames.map(shortName).join(' বনাম ')+(m.live?' · 🟢 লাইভ':'');}
 // ids of everyone who played, best first (null while the match is still going)
 function matchOutcome(m){
+  const qt=(m.moves||[]).find(x=>x.quit&&x.p!==m.meIdx);   // somebody left the game: they come last, everybody else keeps their order
+  if(qt&&m.ids[qt.p])return{order:m.ids.filter((_,i)=>i!==qt.p).concat(m.ids[qt.p]),draw:false,left:m.ids[qt.p]};
   const ids=m.ids,over=m.simN>=m.limit*(m.fixed?60:1/m.stepDt);
   if(m.game==='pool'){const S=POOL;let w=null;if(S.winner!=null&&m.simN>360)w=S.winner;
     else if(over){const g0=S.groups[0],g1=S.groups[1];w=m.rng()<.5?0:1;if(g0&&g1){const l0=ballsOn(S.T,b=>b.kind===g0).length,l1=ballsOn(S.T,b=>b.kind===g1).length;if(l0!==l1)w=l0<l1?0:1;}}
@@ -2303,21 +2529,38 @@ function aimObjs(){if(AIM)return AIM;const r=.0286;
   const ring=new THREE.Mesh(new THREE.RingGeometry(r*.86,r,28),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,side:THREE.DoubleSide,depthTest:false}));ring.rotation.x=-Math.PI/2;ring.renderOrder=20;
   const ghost=new THREE.Mesh(new THREE.SphereGeometry(r,20,14),new THREE.MeshStandardMaterial({color:0xfaf7ee,roughness:.25}));
   const g=new THREE.Group();g.add(line,ring,ghost);g.visible=false;scene.add(g);return AIM={g,line,ring,ghost};}
+function paintSpin(u){const d=byId('puDot');d.style.left=(50+u.sx*50)+'%';d.style.top=(50-u.sy*50)+'%';byId('puSpinT').textContent=(u.sy>.15?'টপ ':u.sy<-.15?'ড্র ':'')+(u.sx>.15?'ডান':u.sx<-.15?'বাম':'')||'সোজা';}
 function poolAimOff(m){if(AIM)AIM.g.visible=false;const S=POOL;if(S&&S.cue&&S.cue.on)S.cue.mesh.visible=true;if(m)m.pui=null;}
-function aimTrace(S,x,z,ang){const T=S.T,r=S.cue.r,dx=Math.cos(ang),dz=Math.sin(ang);let best=1e9,hit=null;
-  for(const b of T.balls){if(!b.on||b.cue)continue;const fx=b.x-x,fz=b.z-z,pr=fx*dx+fz*dz;if(pr<=0)continue;const d2=fx*fx+fz*fz-pr*pr,R=2*r;if(d2>=R*R)continue;const t=pr-Math.sqrt(R*R-d2);if(t<best){best=t;hit=b;}}
+function aimTrace(S,x,z,ang,rr){const T=S.T,r=rr||S.cue.r,dx=Math.cos(ang),dz=Math.sin(ang);let best=1e9,hit=null;
+  for(const b of T.balls){if(!b.on||b.cue||b.striker)continue;const fx=b.x-x,fz=b.z-z,pr=fx*dx+fz*dz;if(pr<=0)continue;const d2=fx*fx+fz*fz-pr*pr,R=r+b.r;if(d2>=R*R)continue;const t=pr-Math.sqrt(R*R-d2);if(t<best){best=t;hit=b;}}
   const lx=T.hx-r,lz=T.hz-r;let tw=1e9;
   if(dx>1e-6)tw=Math.min(tw,(lx-x)/dx);else if(dx<-1e-6)tw=Math.min(tw,(-lx-x)/dx);if(dz>1e-6)tw=Math.min(tw,(lz-z)/dz);else if(dz<-1e-6)tw=Math.min(tw,(-lz-z)/dz);
   if(best>tw){best=tw;hit=null;}return{t:best,hit,px:x+dx*best,pz:z+dz*best};}
-function poolAimInit(m){const S=POOL,T=S.T,free=S.ballInHand||S.breakNext,x=S.breakNext?-T.hx/2:S.cue.x,z=S.breakNext?0:S.cue.z;
+function carromAimInit(m){const n=CN[CARROM.turn],u={ang:Math.atan2(n[1],n[0]),pw:.55,sx:0,sy:0,x:0,z:0,free:true,phase:'aim',sent:false,rot:0,down:false,carrom:true};byId('puPow').value=55;paintSpin(u);return u;}
+function carromAimTick(m,dt,left){const S=CARROM,T=S.T,u=m.pui,ui=byId('poolui'),A=aimObjs(),st=S.striker,n=CN[S.turn],pp=[-n[1],n[0]],place=u.phase==='place';
+  if(u.sent){ui.hidden=true;return;}
+  if(u.rot)u.ang+=u.rot*(u.fine?.22:.8)*dt;
+  const base=Math.atan2(n[1],n[0]);u.ang=base+clamp(Math.atan2(Math.sin(u.ang-base),Math.cos(u.ang-base)),-1.25,1.25);
+  st.on=true;st.mesh.visible=true;st.vx=st.vz=0;st.x=-n[0]*.275+pp[0]*u.x;st.z=-n[1]*.275+pp[1]*u.x;
+  const y=T.y+.012,tr=aimTrace(S,st.x,st.z,u.ang,st.r),pos=A.line.geometry.attributes.position.array,ox=T.cx+st.x,oz=T.cz+st.z,px=T.cx+tr.px,pz=T.cz+tr.pz;
+  A.g.visible=true;A.ghost.visible=false;
+  pos[0]=ox;pos[1]=y;pos[2]=oz;pos[3]=px;pos[4]=y;pos[5]=pz;
+  if(tr.hit){const b=tr.hit;let nx=b.x-tr.px,nz=b.z-tr.pz;const l=Math.hypot(nx,nz)||1;pos[6]=px;pos[7]=y;pos[8]=pz;pos[9]=px+nx/l*.15;pos[10]=y;pos[11]=pz+nz/l*.15;}
+  else{pos[6]=pos[9]=px;pos[7]=pos[10]=y;pos[8]=pos[11]=pz;}
+  A.line.geometry.attributes.position.needsUpdate=true;A.line.visible=true;A.ring.visible=true;A.ring.scale.setScalar(st.r/.0286);A.ring.position.set(px,y,pz);
+  m.camPos.set(T.cx,T.y+1.35,T.cz+.5);m.camTo.set(T.cx,T.y,T.cz-.02);
+  ui.hidden=false;byId('puSpinRow').hidden=true;
+  byId('puMsg').textContent=place?'↔ স্ট্রাইকারটা বেসলাইনে সরান (বোর্ডে ট্যাপ করুন)':'🎯 আপনার পালা! বোর্ডে ট্যাপ করে দিক ঠিক করুন, জোর দিয়ে ফ্লিক করুন';
+  byId('puT').textContent='⏱ '+bnd(left);byId('puMove').hidden=false;byId('puMove').textContent=place?'🎯 লক্ষ্য ঠিক করি':'↔ স্ট্রাইকার সরাই';byId('puShoot').textContent=place?'✔ এখানেই রাখি':'🎯 ফ্লিক!';}
+function poolAimInit(m){if(m.game==='carrom')return carromAimInit(m);const S=POOL,T=S.T,free=S.ballInHand||S.breakNext,x=S.breakNext?-T.hx/2:S.cue.x,z=S.breakNext?0:S.cue.z;
   let ang=0;if(!S.breakNext){const tg=legalTargets(S);if(tg.length){const b=tg.reduce((a,c)=>Math.hypot(c.x-x,c.z-z)<Math.hypot(a.x-x,a.z-z)?c:a);ang=Math.atan2(b.z-z,b.x-x);}}
-  const u={ang,pw:.55,x,z,free,phase:S.ballInHand&&!S.breakNext?'place':'aim',sent:false,rot:0,down:false};
+  const u={ang,pw:.55,sx:0,sy:0,x,z,free,phase:S.ballInHand&&!S.breakNext?'place':'aim',sent:false,rot:0,down:false};
   if(u.phase==='place'){const q=fitCue(S,x,z);u.x=q[0];u.z=q[1];}
-  byId('puPow').value=Math.round(u.pw*100);return u;}
-function poolAimTick(m,dt,left){const S=POOL,T=S.T,u=m.pui,ui=byId('poolui'),A=aimObjs();
+  byId('puPow').value=Math.round(u.pw*100);paintSpin(u);return u;}
+function poolAimTick(m,dt,left){if(m.game==='carrom')return carromAimTick(m,dt,left);byId('puSpinRow').hidden=false;AIM&&(AIM.ghost.visible=true,AIM.ring.scale.setScalar(1));const S=POOL,T=S.T,u=m.pui,ui=byId('poolui'),A=aimObjs();
   if(u.sent){ui.hidden=true;if(!u.free){A.g.visible=false;S.cue.mesh.visible=true;}return;}
   if(u.rot)u.ang+=u.rot*(u.fine?.22:.8)*dt;
-  const y=T.y+S.cue.r+.003,place=u.phase==='place';
+  const y=T.y+S.cue.r+.003,place=u.phase==='place',g=S.groups[S.shooter],grp=g?(S.onEight?'৮ নম্বর বলই আপনার টার্গেট। ':KN[g]+' আপনার। '):'খোলা টেবিল। ';
   S.cue.mesh.visible=false;A.g.visible=true;A.ghost.position.set(T.cx+u.x,T.y+S.cue.r,T.cz+u.z);
   const tr=aimTrace(S,u.x,u.z,u.ang),pos=A.line.geometry.attributes.position.array,ox=T.cx+u.x,oz=T.cz+u.z,px=T.cx+tr.px,pz=T.cz+tr.pz;
   pos[0]=ox;pos[1]=y;pos[2]=oz;pos[3]=px;pos[4]=y;pos[5]=pz;
@@ -2326,24 +2569,26 @@ function poolAimTick(m,dt,left){const S=POOL,T=S.T,u=m.pui,ui=byId('poolui'),A=a
   A.line.geometry.attributes.position.needsUpdate=true;A.line.visible=!place;A.ring.visible=!place;A.ring.position.set(px,y,pz);
   // a fixed view from above the table, so aiming by touch never fights the camera
   m.camPos.set(T.cx,T.y+1.5,T.cz+1.55);m.camTo.set(T.cx,T.y,T.cz-.05);
-  ui.hidden=false;byId('puMsg').textContent=place?'⚪ সাদা বলটা যেখানে খুশি বসান (টেবিলে ট্যাপ/ক্লিক করুন)':S.breakNext?'💥 ব্রেক করুন! টেবিলে ট্যাপ করে দিক ঠিক করুন, জোর দিয়ে মারুন':'🎯 আপনার পালা! টেবিলে ট্যাপ করে দিক ঠিক করুন';
+  ui.hidden=false;byId('puMsg').textContent=place?'⚪ সাদা বলটা যেখানে খুশি বসান (টেবিলে ট্যাপ/ক্লিক করুন)':grp+(S.breakNext?'💥 ব্রেক করুন! টেবিলে ট্যাপ করে দিক ঠিক করুন, জোর দিয়ে মারুন':'🎯 আপনার পালা! টেবিলে ট্যাপ করে দিক ঠিক করুন');
   byId('puT').textContent='⏱ '+bnd(left);byId('puMove').hidden=!u.free;byId('puMove').textContent=place?'🎯 লক্ষ্য ঠিক করি':'⚪ সাদা বল সরাই';
   byId('puShoot').textContent=place?'✔ এখানেই বসাই':'🎱 মারুন!';}
-function poolAimPoint(e){const m=MT;if(!m||!m.pui||m.pui.sent)return null;const S=POOL,T=S.T,r=renderer.domElement.getBoundingClientRect(),rc=new THREE.Raycaster();
+function poolAimPoint(e){const m=MT;if(!m||!m.pui||m.pui.sent)return null;const S=m.game==='pool'?POOL:CARROM,T=S.T,r=renderer.domElement.getBoundingClientRect(),rc=new THREE.Raycaster();
   rc.setFromCamera(new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),camera);
-  const o=rc.ray.origin,d=rc.ray.direction,yy=T.y+S.cue.r;if(Math.abs(d.y)<1e-5)return null;const t=(yy-o.y)/d.y;if(t<=0)return null;return[o.x+d.x*t-T.cx,o.z+d.z*t-T.cz];}
+  const o=rc.ray.origin,d=rc.ray.direction,yy=T.y+(m.game==='pool'?S.cue.r:.012);if(Math.abs(d.y)<1e-5)return null;const t=(yy-o.y)/d.y;if(t<=0)return null;return[o.x+d.x*t-T.cx,o.z+d.z*t-T.cz];}
 function poolAimTo(e){const m=MT,u=m&&m.pui,q=poolAimPoint(e);if(!u||!q)return;
+  if(m.game==='carrom'){const S=CARROM,n=CN[S.turn],pp=[-n[1],n[0]],st=S.striker;
+    if(u.phase==='place')u.x=clamp(q[0]*pp[0]+q[1]*pp[1],-.2,.2);else if(Math.hypot(q[0]-st.x,q[1]-st.z)>.03)u.ang=Math.atan2(q[1]-st.z,q[0]-st.x);return;}
   if(u.phase==='place'){const f=fitCue(POOL,q[0],q[1]);u.x=f[0];u.z=f[1];}
   else if(Math.hypot(q[0]-u.x,q[1]-u.z)>.05)u.ang=Math.atan2(q[1]-u.z,q[0]-u.x);}
-async function poolShoot(){const m=MT,u=m&&m.pui;if(!u||u.sent||!poolMatch())return;
+async function poolShoot(){const m=MT,u=m&&m.pui;if(!u||u.sent||!(poolMatch()||carromMatch()))return;
   if(u.phase==='place'){u.phase='aim';return;}
-  u.sent=true;const a={ang:u.ang,pw:u.pw};if(u.free){a.cx=u.x;a.cz=u.z;}
-  const n=m.moves.length;sfx.play('click');await postMove(m,a,m.meIdx);
+  u.sent=true;const a={ang:u.ang,pw:u.pw};if(u.sx||u.sy){a.sx=Math.round(u.sx*100)/100;a.sy=Math.round(u.sy*100)/100;}if(u.free){a.cx=u.x;a.cz=u.z;}
+  const n=m.moves.length;if(!u.carrom)sfx.play('click');await postMove(m,a,m.meIdx);
   if(MT===m&&m.pui===u&&m.moves.length===n)u.sent=false;}   // it didn't get through: let them try again
 function wirePoolUI(){
   const el=byId('poolui'),cv=renderer.domElement;
   for(const t of['keydown','keyup'])el.addEventListener(t,e=>e.stopPropagation());
-  cv.addEventListener('pointerdown',e=>{const u=MT&&MT.pui;if(!u||MT.game!=='pool')return;u.down=true;poolAimTo(e);});
+  cv.addEventListener('pointerdown',e=>{const u=MT&&MT.pui;if(!u)return;u.down=true;poolAimTo(e);});
   cv.addEventListener('pointermove',e=>{const u=MT&&MT.pui;if(u&&u.down)poolAimTo(e);});
   addEventListener('pointerup',()=>{const u=MT&&MT.pui;if(u)u.down=false;});
   const hold=(id,v)=>{const b=byId(id);b.addEventListener('pointerdown',e=>{const u=MT&&MT.pui;if(u){u.rot=v;u.fine=e.shiftKey;}});for(const t of['pointerup','pointerleave','pointercancel'])b.addEventListener(t,()=>{const u=MT&&MT.pui;if(u)u.rot=0;});};
@@ -2351,6 +2596,9 @@ function wirePoolUI(){
   byId('puPow').addEventListener('input',e=>{const u=MT&&MT.pui;if(u)u.pw=e.target.value/100;});
   byId('puMove').addEventListener('click',()=>{const u=MT&&MT.pui;if(u)u.phase=u.phase==='place'?'aim':'place';});
   byId('puShoot').addEventListener('click',poolShoot);
+  const pad=byId('puSpin'),setSpin=e=>{const u=MT&&MT.pui;if(!u)return;const r=pad.getBoundingClientRect();let x=((e.clientX-r.left)/r.width-.5)*2,y=((e.clientY-r.top)/r.height-.5)*2;const l=Math.hypot(x,y);if(l>.85){x*=.85/l;y*=.85/l;}u.sx=x;u.sy=-y;paintSpin(u);};
+  pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);pad.dn=true;setSpin(e);});pad.addEventListener('pointermove',e=>{if(pad.dn)setSpin(e);});pad.addEventListener('pointerup',()=>{pad.dn=false;});
+  byId('puSpinC').addEventListener('click',()=>{const u=MT&&MT.pui;if(u){u.sx=u.sy=0;paintSpin(u);}});
   addEventListener('keydown',e=>{const u=MT&&MT.pui;if(!u||u.sent||byId('poolui').hidden)return;let used=true;
     if(e.code==='ArrowLeft'||e.code==='KeyA'){u.rot=-1;u.fine=e.shiftKey;}else if(e.code==='ArrowRight'||e.code==='KeyD'){u.rot=1;u.fine=e.shiftKey;}
     else if(e.code==='ArrowUp'||e.code==='KeyW'){u.pw=Math.min(1,u.pw+.05);byId('puPow').value=Math.round(u.pw*100);}
@@ -2358,6 +2606,11 @@ function wirePoolUI(){
     else if(e.code==='Space'||e.code==='Enter'){poolShoot();}else used=false;
     if(used){e.preventDefault();e.stopPropagation();}},true);
   addEventListener('keyup',e=>{const u=MT&&MT.pui;if(!u)return;if(['ArrowLeft','ArrowRight','KeyA','KeyD'].includes(e.code))u.rot=0;},true);}
+// leaving a game in the middle counts as a loss; live opponents are told through the move log
+function quitMatch(){const m=MT;if(!m||m.state!=='play')return;
+  if(!confirm('খেলা মাঝপথে ছেড়ে দিলে হার ধরা হবে আর রেটিং কমবে। তবুও ছাড়বেন?'))return;
+  if(m.liveId&&m.ids.length>1)postMove(m,{quit:1},m.meIdx);
+  const me=PROFILE.empId;m.state='result';m.t=0;m.hudT=0;showResult({order:m.ids.filter(i=>i!==me).concat(me),draw:false,quit:true});}
 function updMHud(m){const el=Math.floor(simElapsed(m)),mm=Math.floor(el/60),ss=String(el%60).padStart(2,'0');
   byId('mhM').textContent=m.game==='pool'?(POOL.msg||'')+(POOL.state==='await'&&POOL.shooter!==m.meIdx&&m.humans&&m.humans[POOL.shooter]?' · '+shortName(m.pnames[POOL.shooter])+' লক্ষ্য করছে…':''):m.game==='carrom'?('স্কোর: '+shortName(m.pnames[0])+' '+bnN(CARROM.sc[0])+' · '+shortName(m.pnames[1])+' '+bnN(CARROM.sc[2])):(m.msg||'');
   byId('mhC').textContent='সময় '+bnd(mm)+':'+bnd(ss);}
@@ -2403,7 +2656,7 @@ async function showResult(r){const m=MT,me=PROFILE.empId,n=r.order.length,place=
   const medal=['🥇','🥈','🥉','🏅'],nm=id=>id===me?'আপনি':shortName((m.pinfo[id]||{}).name);
   const win=place===1&&!r.draw;
   byId('rBig').textContent=r.draw?'🤝':win?'🏆':n>2&&place<n?medal[place-1]:'😭';
-  byId('rTitle').textContent=r.draw?'ম্যাচ ড্র!':win?'আপনি জিতেছেন!':n>2?'আপনি '+bnd(place)+' নম্বরে শেষ করেছেন':'আপনি হেরে গেছেন!';
+  byId('rTitle').textContent=r.quit?'আপনি খেলা ছেড়ে দিয়েছেন!':r.left?(nm(r.left)+' খেলা ছেড়ে পালিয়েছে, আপনি জিতেছেন!'):r.draw?'ম্যাচ ড্র!':win?'আপনি জিতেছেন!':n>2?'আপনি '+bnd(place)+' নম্বরে শেষ করেছেন':'আপনি হেরে গেছেন!';
   byId('rText').textContent=(n>2?'র‍্যাঙ্কিং: '+r.order.map((id,i)=>medal[i]+' '+nm(id)).join(' · ')+'। ':'')+(r.draw?'কেউ হারেনি, কেউ জেতেওনি। চা দুজনেই খাবেন।':win?'অফিসে আপনার নাম ছড়িয়ে পড়ল। চা-নাশতার বিল এবার অন্যদের।':place===n?'চা-নাশতার বিল আপনার, আর কেউ জিজ্ঞেস করলে বলবেন টেবিল ঢালু ছিল।':'মন্দ না! পরের বার ঠিকই জিতবেন।');
   const xp=byId('rXp');xp.className='rxp';xp.textContent=gd.bn+' রেটিং হিসাব হচ্ছে…';byId('rAgain').disabled=true;byId('rOk').disabled=true;byId('mres').hidden=false;sfx.play(win?'ok':r.draw?'pop':'fail');
   try{const res=await fetch('/api/match',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({game:m.game,order:r.order,draw:r.draw})}),d=await res.json().catch(()=>null);
@@ -2427,14 +2680,15 @@ function endMatch(again){const m=MT;if(!m)return;if(PROFILE)setPlayerModel(PROFI
   if(again)setTimeout(()=>openPicker(m.game,dine),300);}
 function retUpdate(dt){for(const r of RET.slice()){if(moveAlong(r.P,dt)){scene.remove(r.P.root);r.seat.taken=false;RET.splice(RET.indexOf(r),1);}}}
 function wireMatchUI(){
+  for(const b of byId('mmode').querySelectorAll('button'))b.addEventListener('click',()=>{pickMode=b.dataset.m;paintMode();});
   byId('mpickClose').addEventListener('click',closePick);byId('mpickQ').addEventListener('input',()=>{if(EMPS)renderPick();});
   byId('mpick').addEventListener('click',e=>{if(e.target===byId('mpick'))closePick();});
-  byId('mpickGo').addEventListener('click',()=>{const es=pickSel.map(id=>EMPS.find(e=>e.empId===id)).filter(Boolean);if(!es.length)return;closePick();beginInvite(es,pickGame,pickTable);});
+  byId('mpickGo').addEventListener('click',()=>{const es=pickSel.map(id=>EMPS.find(e=>e.empId===id)).filter(Boolean);if(!es.length)return;closePick();beginInvite(es,pickGame,pickDining?pickTable:pickModeTable());});
   for(const id of['mpick','mres','minvite']){const el=byId(id);el.addEventListener('keydown',e=>e.stopPropagation());el.addEventListener('keyup',e=>e.stopPropagation());}
   addEventListener('keydown',e=>{if(e.key==='Escape'&&!byId('mpick').hidden){e.stopPropagation();closePick();}},true);
   byId('invYes').addEventListener('click',()=>answerInvite(true));byId('invNo').addEventListener('click',()=>answerInvite(false));
   renderer.domElement.addEventListener('pointerdown',e=>{const m=MT;if(!m||m.state!=='play'||m.game!=='ludo'||!m.waitingMine||!m.viz)return;const t=m.viz.pick(e.clientX,e.clientY);if(t>=0)chooseToken(m,t);});
-  wirePoolUI();
+  byId('mQuit').addEventListener('click',quitMatch);wireActs();wirePoolUI();
   byId('rOk').addEventListener('click',()=>endMatch(false));byId('rAgain').addEventListener('click',()=>endMatch(true));}
 
 /* ================= the bosses' rounds: CEO, HR and the manager walk around the office ================= */
@@ -2558,7 +2812,7 @@ function chaseUpdate(B,plan,dt,t){
   if(CHASE.t>45)endChase('বস হাল ছেড়ে দিলেন। এবারের মতো বেঁচে গেলেন!');}
 async function caught(id){const b=BOSSES[id],L=LETTERS[id],name=window.CB_PLAYER.name;endChase();sfx.play('fail');
   byId('lTitle').textContent=L.title;byId('lBody').textContent=L.body.replace('{name}',name);byId('lSign').textContent=L.sign;
-  const cut=byId('lCut');cut.className='lcut';cut.textContent='এমপ্লয়মেন্ট রেটিং কাটা হচ্ছে…';byId('lOk').disabled=true;byId('lOk').textContent='ক্ষমা চাইলাম 🙏';byId('lNo').disabled=false;byId('mletter').hidden=false;
+  const cut=byId('lCut');cut.className='lcut';cut.textContent='এমপ্লয়মেন্ট রেটিং কাটা হচ্ছে…';byId('lOk').disabled=true;byId('lOk').textContent='ক্ষমা চাইলাম 🙏';byId('lNo').hidden=false;byId('lNo').disabled=false;byId('mletter').hidden=false;
   try{const r=await fetch('/api/warning',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({boss:id})}),d=await r.json().catch(()=>null);
     if(!r.ok||!d||!d.ok)throw new Error(d&&d.error||'');
     if(PROFILE)PROFILE.employment=d.employment;cut.className='lcut bad';cut.textContent='এমপ্লয়মেন্ট রেটিং '+bnd(d.before)+' → '+bnd(d.employment)+' (−'+bnd(d.delta)+')';}
@@ -2585,6 +2839,7 @@ function myState(){
   else if(PAIR.on)act=PAIR.kind==='beg'?'🙏 সিগারেট নিয়ে মজার কথা চলছে':'🚬 একসাথে সিগারেট ধরাচ্ছে';
   else if(SETUP.state==='run')act='💻 ডেস্কে ল্যাপটপ সাজাচ্ছে';
   else if(SETUP.state==='bag'&&walk)act='🎒 ব্যাগ নিয়ে ডেস্কে যাচ্ছে';
+  else if(ACT.kind){pose='act:'+ACT.kind+(SIT.on?'~':'');act=ACT_TXT[ACT.kind]||'';}
   else if(SIT.on){pose=SIT.c&&SIT.c.desk?'type':'sit';act=SIT.c&&SIT.c.desk?'💻 নিজের ডেস্কে কাজ করছে':'🪑 বসে আছে';}
   else if(CMP.on&&CMP.kind==='trouble')act='😱 বসের হাতে ধরা পড়েছে!';
   else if(CMP.on&&CMP.stage!=='done'&&CMP.kind!=='smokejoin')act='😭 এইচআরে অভিযোগ করতে যাচ্ছে';
@@ -2595,7 +2850,7 @@ async function sendPresence(){if(!NET.on||NET.busy)return;NET.busy=true;const s=
     if(r.ok&&d&&d.ok){NET.last=s;applyPlayers(d.players);applyLive(d.live||[],d.serverNow||Date.now());applySlaps(d.slapped||[]);applyNotices(d.notices||[]);applySocialIn(d.socialIn||[]);applySocialOut(d.socialOut||[]);}}
   catch(e){/* offline for a moment: the next beat tries again */}
   NET.busy=false;}
-function startNet(){if(NET.on)return;NET.on=true;loadDeskOwners();byId('whoBtn').hidden=false;sendPresence();
+function startNet(){if(NET.on)return;NET.on=true;loadDeskOwners();byId('whoBtn').hidden=false;byId('actbtn').hidden=false;sendPresence();
   const beat=()=>{sendPresence();setTimeout(beat,document.hidden?4000:(MT&&MT.liveId&&MT.turnGame&&MT.state==='play'?300:600));};setTimeout(beat,600);
   addEventListener('pagehide',()=>{try{navigator.sendBeacon('/api/presence',new Blob([JSON.stringify({leave:true})],{type:'application/json'}));}catch(e){}});}
 function applyPlayers(list){
@@ -2621,6 +2876,7 @@ function remoteUpdate(dt,t){const w=stage.clientWidth,h=stage.clientHeight,maxD=
     r.yaw+=dy*Math.min(1,dt*8);r.yy+=((r.ty||0)-r.yy)*Math.min(1,dt*10);P.x=r.x;P.z=r.z;P.yaw=r.yaw;P.root.position.set(r.x,r.yy,r.z);P.root.rotation.y=r.yaw;
     const paired=PAIR.on&&PAIR.ready&&r.p.empId===PAIR.buddyId;
     if(paired)pairPose(P,PAIR.role==='host'?'guest':PAIR.role==='guest'?'host':PAIR.role==='asker'?'giver':'asker',nowS()-PAIR.t0,player,t,dt);
+    else if(r.pose&&r.pose.startsWith('act:')){r.actAge=(r.actAge||0)+dt;actPoseFor(P,r.pose.slice(4).replace('~',''),r.pose.endsWith('~'),r.actAge,t,dt);}
     else if(r.pose==='sit')seatedPose(P,t,0,_vt.set(r.x,.8,r.z));
     else if(r.pose==='type'){P.v='type';P.seat=.48;P.kbd=.6;aType(P,t,dt);}
     else if(moving){r.wph+=dt*(d>.04?Math.min(d/dt,3.2):1.8)*4.6;rest(P);walkPose(P,r.wph,1);}
@@ -2635,6 +2891,8 @@ function remoteUpdate(dt,t){const w=stage.clientWidth,h=stage.clientHeight,maxD=
     if(r.hitAge>=0){r.hitAge+=dt;const du=r.hitKind==='kick'?1.7:r.hitKind==='desk'?1.2:1.4;if(r.hitAge<du){const v=victimPose(P,r.hitAge,r.hitKind);P.root.position.y+=v.dy;P.root.position.x-=Math.sin(P.yaw)*v.back;P.root.position.z-=Math.cos(P.yaw)*v.back;}else r.hitAge=-1;}
     if(r.offerT>=0){if(!P.cigTip)addCig(P);P.cigGroup.visible=true;r.offerT+=dt;offerPose(P,r.offerT/1.6);if(r.offerT>1.6)r.offerT=-1;}
     life(P,t,dt);
+    {const isAct=!!(r.pose&&r.pose.startsWith('act:')),lie=r.pose==='act:sleep'?1:0;if(!isAct){r.actAge=0;hideProps(P,'');}
+      P.root.rotation.order='YXZ';P.root.rotation.x=-lie*Math.PI/2;if(lie){P.root.position.y+=.2;P.root.position.x+=Math.sin(r.yaw)*.85;P.root.position.z+=Math.cos(r.yaw)*.85;}}
     // name tag over the head
     P.J.neck.getWorldPosition(_v);_v.y+=.3;const dist=camera.position.distanceTo(_v);_v.project(camera);
     if(dist>maxD||_v.z>1||_v.z<-1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){r.el.style.visibility='hidden';continue;}
@@ -2739,7 +2997,7 @@ function start(){
     for(const v of traffic){const px0=v.g.position.x,nx=((v.x0+v.dir*v.speed*tt+58)%116+116)%116-58;v.g.position.x=nx;if(onBal&&(px0-player.x)*(nx-player.x)<0&&Math.abs(nx-px0)<5)sfx.vehicle(Math.max(.3,Math.min(1,1.3-Math.abs(v.g.position.z-player.z)/22)),v.kind);}
     updSmoke(dt);gateUpdate(tt,dt);
     if(MT&&(MT.state==='play'||MT.state==='result')){}else if(mode==='walk')updateWalk(tt,dt);else{updFly(dt);controls.update();}
-    clockTick(dt);matchUpdate(dt);retUpdate(dt);remoteUpdate(dt,tt);bossUpdate(tt,dt);cmpUpdate(dt);hitUpdate(dt);gawk();tbUpdate(dt);pairNpc(tt,dt);
+    clockTick(dt);matchUpdate(dt);retUpdate(dt);remoteUpdate(dt,tt);bossUpdate(tt,dt);cmpUpdate(dt);hitUpdate(dt);gawk();tbUpdate(dt);pairNpc(tt,dt);coupleUpdate();
     updateLabels();updateTalk(dt);renderer.render(scene,camera);requestAnimationFrame(frame);}
   updBoard();requestAnimationFrame(frame);
 }

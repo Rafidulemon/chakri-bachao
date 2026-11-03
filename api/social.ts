@@ -17,7 +17,7 @@ export async function POST(req: Request): Promise<Response> {
     const target = typeof b.target === 'string' ? b.target : '';
     const kind = b.kind === 'beg' ? 'beg' : b.kind === 'smoke' ? 'smoke' : '';
     if (!target || target === me || !kind) return json({ ok: false, error: 'ভুল অনুরোধ।' }, 400);
-    const online = await sql`select 1 from presence where emp_id = ${target} and in_office and zone = 'bal' and updated_at > now() - make_interval(secs => ${ONLINE_SECONDS})`;
+    const online = await sql`select 1 from presence where emp_id = ${target} and in_office and updated_at > now() - make_interval(secs => ${ONLINE_SECONDS})`;
     if (!online[0]) return json({ ok: false, error: 'উনি এখন বারান্দায় নেই।' }, 409);
     const recent = await sql`select 1 from socials where from_id = ${me} and created_at > now() - make_interval(secs => ${COOLDOWN_SECONDS})`;
     if (recent[0]) return json({ ok: false, error: 'একটু দম নিন, এত তাড়াতাড়ি আরেকবার ডাকা যায় না।' }, 429);

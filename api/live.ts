@@ -20,7 +20,7 @@ export async function POST(req: Request): Promise<Response> {
     const table = Number.isInteger(b.table) ? b.table : -1;
     if (!game || !inv.length || 1 + inv.length + sims.length > LIVE_MAX[game]) return json({ ok: false, error: 'ভুল অনুরোধ।' }, 400);
     const dine = game === 'uno' || game === 'chess' || game === 'ludo';
-    if (dine ? table < 0 || table > 5 : table !== -1) return json({ ok: false, error: 'ভুল অনুরোধ।' }, 400);
+    if (dine ? table < 0 || table > 5 : table !== -1 && table !== -2) return json({ ok: false, error: 'ভুল অনুরোধ।' }, 400);
     const online = await sql`select emp_id from presence where emp_id = any(${inv}) and updated_at > now() - make_interval(secs => ${ONLINE_SECONDS})`;
     if (online.length !== inv.length) return json({ ok: false, error: 'যাকে ডেকেছেন তিনি এইমাত্র অফলাইন হয়ে গেছেন।' }, 409);
     const known = await sql`select emp_id from employees where emp_id = any(${[...inv, ...sims]})`;
@@ -62,10 +62,13 @@ export async function POST(req: Request): Promise<Response> {
     if (typeof a.col === 'string' && /^[RYGB]$/.test(a.col)) entry.col = a.col;
     if (a.draw === 1) entry.draw = 1;
     if (auto) entry.auto = 1;
+    if (a.quit === 1) entry.quit = 1;
     // a pool shot: the angle, the power (0 to 1) and, after a foul, where the cue ball was placed
     const num = (v: unknown, lo: number, hi: number) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
     if (num(a.ang, -10, 10)) entry.ang = a.ang;
     if (num(a.pw, 0, 1)) entry.pw = a.pw;
+    if (num(a.sx, -1, 1)) entry.sx = a.sx;
+    if (num(a.sy, -1, 1)) entry.sy = a.sy;
     if (num(a.cx, -5, 5) && num(a.cz, -5, 5)) { entry.cx = a.cx; entry.cz = a.cz; }
     const rows = await sql`update live_matches set moves = moves || ${JSON.stringify([entry])}::jsonb
       where id = ${id} and status = 'go' and jsonb_array_length(moves) = ${seq} returning jsonb_array_length(moves) as n`;
