@@ -489,8 +489,12 @@ function perimPath(cx,cz,ax,az,from,to){const f=[from[0]-cx,from[1]-cz],t=[to[0]
 /* ================= build the office ================= */
 const PRES=[-10.6,3.8];
 const COUPLE=[],CP={busy:false,until:0,say:3};   // the couple on the stairs
-const STAIR={x0:5.0,run:.35,drop:.15,n:12,extra:.3};   // the stairs go down from x0, a step every 'run' metres, to a landing 1.8 m below the floor
-const stairH=(x,z)=>(x<STAIR.x0||x>13.1||z<-15.9||z>-13.5)?0:(i=>-Math.min(STAIR.n,i)*STAIR.drop-(i>STAIR.n?STAIR.extra:0))(Math.floor((x-STAIR.x0)/STAIR.run)+1);
+// the stairs: two flights side by side that turn at a landing, going down 3.4 m. The back lane goes east from the entrance, the front lane comes back west to the bottom hall.
+const STAIR={xv:5.6,xm:8.64,xe:9.9,zr:-14.8,run:.38,drop:.21,n:8};
+const stairH=(x,z)=>{const S=STAIR,bot=-2*S.n*S.drop;if(x<3.7||x>S.xe||z<-15.9||z>-13.5)return 0;
+  if(x<S.xv)return z<S.zr?0:bot;
+  if(x<S.xm)return z<S.zr?-Math.min(S.n,Math.floor((x-S.xv)/S.run)+1)*S.drop:-(S.n+Math.min(S.n,Math.floor((S.xm-x)/S.run)+1))*S.drop;
+  return -S.n*S.drop;};
 const ZONES=[
   {id:'work',bn:'ওয়ার্কস্পেস',en:'Workspace',what:'আয়তাকার অফিসের মাঝখানে, আগের আড়াই গুণ বড়। সফটওয়্যার ইঞ্জিনিয়ারদের ল্যাপটপে Claude আর মনিটরে VS Code, QA দের Excel বাগ লিস্ট আর ব্রাউজার, ডিজাইনারদের Excel আর Figma।',r:[-12.5,14.75,-13.5,.4],c:[1,-6.8],sp:[1,-12.5]},
   {id:'w2',bn:'ওয়ার্কস্পেস',en:'Workspace',r:[-16,18,-13.5,7.5],hide:true},
@@ -503,7 +507,7 @@ const ZONES=[
   {id:'dine',bn:'ডাইনিং',en:'Dining',what:'ডান দিকে ওয়াশরুমের নিচে, লম্বালম্বি। বাঁ পাশের দরজা ওয়ার্কস্পেসের মাঝের হাঁটার পথের সাথে এক লাইনে। ৬টা টেবিল, প্রতিটায় ৪টা বসার জায়গা, মাথার দিকে কিচেন কাউন্টার।',r:[14.75,18,-10.5,.5],c:[16.4,-4.5],sp:[14.2,-6.75]},
   {id:'hr',bn:'এইচআর রুম',en:'HR room',what:'নিচের ডান কোণে, ডাইনিংয়ের ঠিক নিচে। দুটো ঘোরানো টেবিলে দুজন এইচআর, প্রত্যেকের একটা মনিটরে Excel, সামনে একজন করে কর্মী বসে।',r:[14.75,18,.5,7.5],c:[16.4,4],sp:[14.2,4]},
   {id:'bal',bn:'বারান্দা',en:'Balcony',what:'গেমিং রুম থেকে এইচআর রুম পর্যন্ত লম্বা ঢাকা বারান্দা। তিনজন দাঁড়িয়ে সিগারেট, তিনজন বেতের চেয়ারে চা, দুজন প্ল্যান্টারের কিনারায় আর দুজন মেঝেতে বসে সিগারেট।',r:[-6.2,18.3,7.5,10.1],c:[6,8.7],sp:[2.5,8.5]},
-  {id:'stairs',bn:'সিঁড়ি',en:'Stairs',what:'মেইন গেটের লিফট-লবির ডান পাশের সিঁড়ি নিচে নেমে গেছে। নিচের ল্যান্ডিংয়ে একটা জুটি গা ঘেঁষে বসে গুনগুন করে।',r:[3.7,13.1,-15.9,-13.5],c:[7.1,-14.5],sp:[4.1,-14.6],hide:true},
+  {id:'stairs',bn:'সিঁড়ি',en:'Stairs',what:'মেইন গেটের লিফট-লবির ডান পাশের সিঁড়ি নিচে নেমে গেছে। নিচের ল্যান্ডিংয়ে একটা জুটি গা ঘেঁষে বসে গুনগুন করে।',r:[3.7,9.9,-15.9,-13.5],c:[7.1,-14.5],sp:[4.1,-15.2],hide:true},
   {id:'gate',bn:'মেইন গেট ও লিফট',en:'Main gate',what:'উপরের দেয়ালের ঠিক মাঝখানে, ঝাপসা কাচের বন্ধ দরজা। ভেতরে দরজার পাশে এক্সিট বাটন, বাইরে ফেস স্ক্যানার। হেঁটে দেখুন মোডে কাছে গিয়ে E চাপুন।',r:[-1.7,3.7,-15.9,-13.5],c:[1,-14.7],sp:[1,-14.2]}
 ];
 // random numbers the pool and carrom controllers use. A live match swaps in a seeded one so both players see the same game.
@@ -528,21 +532,41 @@ function build(){
   bx(wallsG,5.4,H,.12,1,0,Z0-2.4,wallM);addCol(-1.8,3.8,Z0-2.5,Z0-2.34);addCol(-1.82,-1.7,Z0-2.4,Z0);
   for(const x of [0,2]){bx(wallsG,1.05,2.3,.05,x,0,Z0-2.32,'#2a2d31');bx(wallsG,.47,2.1,.03,x-.24,0,Z0-2.29,mat('#aeb5bd',.25,.7),{cast:false});bx(wallsG,.47,2.1,.03,x+.24,0,Z0-2.29,mat('#aeb5bd',.25,.7),{cast:false});}
   {const P=mkWoman();place(P,1,Z0-1.4,Math.PI);P.v='scroll';addPhone(P);acts.push({P,fn:aScroll});addCol(.75,1.25,Z0-1.65,Z0-1.15);}
-  /* ---------- the fire stairs next to the lift lobby: they go DOWN to a landing where a couple sits and flirts ---------- */
-  {const ST=STAIR,zc=Z0-1.2,XE=13.1,TOP=H+2.6;
-    bx(null,ST.x0-3.7,.3,2.4,(3.7+ST.x0)/2,-.3,zc,'#b9b4aa');floor(3.7,ST.x0,Z0-2.4,Z0,TX.marble,2,null,.004,.3);
-    bx(wallsG,XE-3.7,TOP,.12,(3.7+XE)/2,-2.6,Z0-2.4,wallM);addCol(3.7,XE,Z0-2.5,Z0-2.34);
-    bx(wallsG,.12,TOP,2.4,XE,-2.6,zc,wallM);addCol(XE-.05,XE+.07,Z0-2.4,Z0);
-    addCol(3.7,XE+.1,Z0-.02,Z0+.12);
-    for(let n=1;n<=ST.n;n++){const top=-n*ST.drop;bx(null,ST.run,top+2.1,2.28,ST.x0+(n-.5)*ST.run,-2.1,zc,n%2?'#c9c4b8':'#b8b3a6');}
-    const lx=ST.x0+ST.n*ST.run;
-    bx(null,XE-lx,.3,2.28,(lx+XE)/2,-2.4,zc,'#b9b4aa');floor(lx,XE,Z0-2.4,Z0,TX.marble,2,null,-2.095,.3);   // one more step down: the landing is lower than the last stair
-    bx(null,.05,2.0,.9,XE-.06,-2.1,zc,'#2f6b3a',{cast:false});bx(null,.04,.2,.5,XE-.06,-.1,zc,'#1f9d55',{cast:false});
+  /* ---------- the stairs next to the lift lobby: a wooden flight down to a landing, a carpeted flight on to the bottom hall, where a couple sits ---------- */
+  {const S=STAIR,zr=S.zr,zc=Z0-1.2,LAB=-S.n*S.drop,BOT=2*LAB,DEEP=3.7,white='#efede7',wood='#c8985c',carpet='#b6a894',black='#1b1b1b',wall='#e4e2dc',TOPW=H+DEEP;
+    const bk=-15.35,bw=1.1,fk=-14.15,fw=1.3;   // the back lane and the front lane
+    // walls and the pit they stand in
+    bx(wallsG,S.xe-3.7,TOPW,.12,(3.7+S.xe)/2,-DEEP,Z0-2.4,wall);addCol(3.7,S.xe+.05,Z0-2.46,Z0-2.34);
+    bx(wallsG,.12,TOPW,2.4,S.xe,-DEEP,zc,wall);addCol(S.xe-.05,S.xe+.07,Z0-2.4,Z0);
+    bx(wallsG,.12,TOPW,fw,3.7,-DEEP,fk,wall);addCol(3.64,3.76,zr,Z0);
+    addCol(3.7,S.xe+.05,Z0-.02,Z0+.12);addCol(3.7,S.xm,zr-.04,zr+.04);
+    // the entrance (still on this floor) and the bottom hall
+    bx(null,S.xv-3.7,DEEP,bw,(3.7+S.xv)/2,-DEEP,bk,'#d9d6cf');floor(3.7,S.xv,Z0-2.4,zr,TX.marble,2,null,.004,.3);
+    bx(null,S.xv-3.7,DEEP+BOT,fw,(3.7+S.xv)/2,-DEEP,fk,carpet);
+    // the landing, in hardwood
+    bx(null,S.xe-S.xm,DEEP+LAB-.05,2.4,(S.xm+S.xe)/2,-DEEP,zc,white);bx(null,S.xe-S.xm,.05,2.4,(S.xm+S.xe)/2,LAB-.05,zc,'#b98b5c');
+    // the steps: white risers, wooden treads going down; carpet on the lower flight
+    const top1=n=>-n*S.drop,top2=n=>LAB-n*S.drop;
+    for(let n=1;n<=S.n;n++){
+      const x1=S.xv+(n-.5)*S.run;bx(null,S.run,DEEP+top1(n)-.045,bw,x1,-DEEP,bk,white);bx(null,S.run+.03,.045,bw,x1,top1(n)-.045,bk,wood);
+      const x2=S.xm-(n-.5)*S.run;bx(null,S.run,DEEP+top2(n)-.045,fw,x2,-DEEP,fk,white);bx(null,S.run+.03,.045,fw,x2,top2(n)-.045,fk,carpet);}
+    // the handrail and the black balusters along the open side, a newel post at every turn
+    const a1=Math.atan2(-LAB,S.xm-S.xv),Lr=Math.hypot(S.xm-S.xv,LAB),xc=(S.xv+S.xm)/2;
+    bx(null,Lr,.06,.07,xc,LAB/2+.92-.03,zr,wood,{rz:-a1,cast:false});bx(null,Lr,.06,.07,xc,(LAB+BOT)/2+.92-.03,zr,wood,{rz:a1,cast:false});
+    bx(null,S.xv-3.7,.06,.07,(3.7+S.xv)/2,.92,zr,wood,{cast:false});
+    for(let n=1;n<=S.n;n++){const xa=S.xv+(n-.5)*S.run,xb=S.xm-(n-.5)*S.run;bx(null,.022,.88,.022,xa,top1(n),zr,black,{cast:false});bx(null,.022,.88,.022,xb,top2(n),zr,black,{cast:false});}
+    for(let x=3.8;x<S.xv;x+=.16)bx(null,.022,.9,.022,x,0,zr,black,{cast:false});
+    for(const [x,y] of [[S.xv,0],[S.xm,LAB],[S.xv+.06,BOT],[3.78,0]])bx(null,.11,1.18,.11,x,y,zr,wood,{cast:false});
+    // a window in the end wall, bright like daylight, and a lamp over the landing
+    bx(wallsG,.05,1.34,1.14,S.xe-.07,LAB+.85,zc,'#f6f4ef',{cast:false});bx(null,.03,1.2,1.0,S.xe-.1,LAB+.92,zc,new THREE.MeshBasicMaterial({color:lin('#d6e8f4')}),{cast:false});
+    bx(null,.035,1.2,.03,S.xe-.11,LAB+.92,zc,'#f6f4ef',{cast:false});bx(null,.035,.03,1.0,S.xe-.11,LAB+1.52,zc,'#f6f4ef',{cast:false});
+    const lamp=new THREE.PointLight(0xfff0d8,1.1,9);lamp.position.set(7.3,LAB+1.6,-14.7);scene.add(lamp);
     const tx=canvasTex(512,128,(c,w,h)=>{c.fillStyle='#1d6b3c';c.fillRect(0,0,w,h);c.fillStyle='#fff';c.font='bold 54px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('⬇ সিঁড়ি · Stairs',w/2,h/2+3);});
-    plane(null,1.9,.48,4.6,2.35,Z0-2.33,new THREE.MeshBasicMaterial({map:tx}),0,0);
+    plane(null,1.7,.43,4.75,2.3,Z0-2.33,new THREE.MeshBasicMaterial({map:tx}),0,0);
+    // the couple sit on the lower flight, close together, feet on the next step down
     const man=mkMan({style:'shirt',top:'#2f4f7a',bot:'#23252b',hs:'short',hair:'#1c1c1c',h:.9}),wom=mkWoman({top:'#c2456b',glasses:false,hs:'bun',sandal:true});
-    // they sit on the last stair, feet on the lower landing, looking down the stairwell
-    place(man,8.98,-14.7,Math.PI/2);place(wom,8.98,-15.4,Math.PI/2);for(const q of [man,wom]){q.root.position.y=-2.1;q.y=-2.1;q.seatH=.3;q.root.visible=false;}
+    const cx=S.xm-4.55*S.run+.1,cy=top2(6);
+    place(man,cx,-14.35,-Math.PI/2);place(wom,cx,-13.8,-Math.PI/2);for(const q of [man,wom]){q.root.position.y=cy;q.y=cy;q.seatH=.22;q.root.visible=false;}
     man.side=1;wom.side=-1;man.couple=wom.couple=true;COUPLE.push(man,wom);
     acts.push({P:man,fn:aCouple},{P:wom,fn:aCouple});}
 
@@ -1259,7 +1283,7 @@ function coupleHit(P,kind){if(CP.busy)return;CP.busy=true;
   setTimeout(()=>{for(const q of COUPLE){q.root.getWorldPosition(_v);puff(_v,.08,1.4,_v2.set(0,.2,0),.6);}toast('জুটি লজ্জায় পালিয়েছে 🏃💨 সিঁড়ি এখন ফাঁকা',3500);CP.until=performance.now()+120000;},2300);
   api('/api/slap',{action:'couple',kind}).then(d=>{setTimeout(()=>{if(d&&d.ok){if(PROFILE)PROFILE.employment=d.employment;showPraise(d.before,d.employment,d.delta);}else{if(d&&d.error)toast(d.error,3500);}},2600);});}
 function coupleUpdate(){if(CP.busy&&CP.until&&performance.now()>CP.until){CP.busy=false;CP.until=0;}
-  const down=mode==='walk'&&(player.y||0)<-.7&&player.x>5;for(const q of COUPLE)q.root.visible=down&&!CP.busy;}
+  const down=mode==='walk'&&(player.y||0)<-1.2&&player.x>3.7;for(const q of COUPLE)q.root.visible=down&&!CP.busy;}
 const PRAISE=[
   {t:'🏅 প্রশংসাপত্র: সিঁড়ির সংস্কৃতি রক্ষায়',b:'প্রিয় {name},\n\nআমরা জানতে পেরেছি, আপনি সিঁড়িতে "বিশেষ আলাপ" চালানো জুটিকে সময়মতো শিক্ষা দিয়েছেন। কোম্পানির সংস্কৃতি রক্ষায় আপনার এই অবদান আমরা সোনার অক্ষরে (অথবা অন্তত হলুদ মার্কারে) লিখে রাখলাম।\n\nআপনার এমপ্লয়মেন্ট রেটিং বাড়ানো হলো। তবে মনে রাখবেন, প্রেম বন্ধ করা আমাদের উদ্দেশ্য নয়, প্রেম অফিস টাইমের বাইরে করাই উদ্দেশ্য।',s:'কৃতজ্ঞতায়, এইচআর আপা 😊'},
   {t:'ধন্যবাদ পত্র: সিঁড়ির পাহারাদার',b:'{name},\n\nআজ থেকে আপনি আমাদের "অনানুষ্ঠানিক সিঁড়ি-পরিদর্শক"। সিঁড়ি হলো ওঠানামার জায়গা, প্রেম-ওঠানামার জায়গা নয়। আপনার তৎপরতায় আমরা মুগ্ধ, তাই রেটিংয়ে বোনাস দেওয়া হলো।\n\nপুনশ্চ: এই চিঠি কাউকে দেখাবেন না, বিশেষ করে ওই দুজনকে।',s:'ইতি, এইচআর বিভাগ (গোপনে খুশি)'},
