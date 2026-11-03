@@ -17,31 +17,23 @@
   <div class="strap"></div><div class="clip"></div>
   <div class="idcard" id="idcard">
    <div class="idhole"></div>
-   <div class="idhead"><div class="co">কর্মচারী পরিচয়পত্র · ফ্লোর ১৩</div><h2>চাকরি বাঁচাও</h2><div class="tag">আজকের দিনটা টিকে থাকুন।</div><div class="stamp">কারণ দর্শাও</div></div>
+   <div class="idhead"><div class="brand"><b>ECHOLOGYX</b><span>কর্মচারী পরিচয়পত্র · ফ্লোর ১৩</span></div><h2>চাকরি বাঁচাও</h2><div class="tag">আজকের দিনটা টিকে থাকুন।</div><div class="stamp">কারণ দর্শাও</div></div>
    <div class="idbody">
-    <div class="photo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="22" r="12"/><path d="M8 64c2-14 12-22 24-22s22 8 24 22z"/></svg><span>ছবি নেই<br>(এইচআর হারিয়ে ফেলেছে)</span></div>
-    <div class="meta">আইডি: <b id="empId">EMP-420</b><br>যোগদান: <b>গতকাল থেকে প্রোবেশনে</b><br>বেতন: <b>আগামী সপ্তাহে</b><br>এখন সময়: <span class="clock" id="lclock">০৯:১৪</span></div>
+    <div class="photo"><div class="ph">🧑‍💼</div><span>ছবি নেই<br>(এইচআর হারিয়ে ফেলেছে)</span></div>
+    <div class="meta"><div class="ldate" id="ldate"></div><div class="lclock" id="lclock">০০:০০</div><div class="lstat" id="lstat"></div></div>
+    <div class="notice"><b>📌 আজকের নোটিশ</b><span id="lnotice"></span></div>
    </div>
    <form class="lform" id="lform" autocomplete="off">
+    <div class="welcome" id="lwelcome" hidden></div>
     <label for="lname">অফিস ইমেইল</label>
     <input type="email" id="lname" maxlength="120" placeholder="name@echologyx.com" autocomplete="username" inputmode="email">
     <div class="hintline" id="nameHint"></div>
     <label for="lpass">এমপ্লয়ি আইডি</label>
     <input type="password" id="lpass" maxlength="40" placeholder="ELX 000" autocomplete="off">
-    <label>আপনার পদবী</label>
-    <div class="roles" id="roles">
-     <button type="button" class="role" data-role="se" aria-pressed="true">সফটওয়্যার ইঞ্জিনিয়ার</button>
-     <button type="button" class="role" data-role="qa" aria-pressed="false">কিউএ</button>
-     <button type="button" class="role" data-role="des" aria-pressed="false">ডিজাইনার</button>
-     <button type="button" class="role" data-role="hr" aria-pressed="false">এইচআর</button>
-     <button type="button" class="role" data-role="peon" aria-pressed="false">পিওন মামা</button>
-     <button type="button" class="role locked" data-role="ceo" aria-pressed="false">সিইও 🔒</button>
-    </div>
     <label class="chk"><input type="checkbox" id="promise"> আমি প্রতিজ্ঞা করছি অফিস টাইমে ফেসবুক চালাবো না (অন্তত বস সামনে থাকলে)</label>
     <label class="chk"><input type="checkbox" id="remember" checked> আমাকে মনে রাখুন (বস ভুলে গেলেও)</label>
     <div class="lbtns">
      <button type="submit" class="go" id="goBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a7 7 0 0 0-7 7v3M19 10a7 7 0 0 0-7-7M8.5 21c1-2 1.5-4.5 1.5-7.5a2 2 0 0 1 4 0c0 3.5-.6 6.3-1.8 8.5M15.5 20.5c.6-1.8.9-4 .9-7a4.4 4.4 0 0 0-8.8 0c0 2-.2 3.7-.7 5"/></svg><span id="goTxt">আঙুলের ছাপ দিয়ে ঢুকুন</span></button>
-     <button type="button" class="fp" id="faceBtn" title="ফেস দিয়ে লগইন"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 10h.01M15 10h.01M9.5 15a3.5 3.5 0 0 0 5 0"/></svg></button>
     </div>
     <div class="lmsg" id="lmsg" role="status" aria-live="polite"></div>
     <button type="button" class="forgot" id="forgot">আইডি ভুলে গেছেন?</button>
@@ -152,14 +144,18 @@
   <div class="lbody" id="lBody"></div>
   <div class="lsign" id="lSign"></div>
   <div class="lcut" id="lCut"></div>
-  <div class="prow"><button type="button" class="pgo" id="lOk">ক্ষমা চাইলাম 🙏</button></div>
+  <div class="prow"><button type="button" class="pghost" id="lNo">ক্ষমা চাইব না ✊</button><button type="button" class="pgo" id="lOk">ক্ষমা চাইলাম 🙏</button></div>
  </div>
 </div>
 <div class="turnui" id="turnui" hidden></div>
+<div class="turnui poolui" id="poolui" hidden>
+  <div class="tu-h"><span id="puMsg"></span> <span id="puT"></span></div>
+  <div class="pu-pow"><label for="puPow">জোর</label><input type="range" id="puPow" min="5" max="100" value="55"></div>
+  <div class="tu-row"><button type="button" class="tu-b ghost" id="puL">◀ বামে</button><button type="button" class="tu-b ghost" id="puR">ডানে ▶</button><button type="button" class="tu-b ghost" id="puMove">⚪ সাদা বল সরাই</button><button type="button" class="tu-b go" id="puShoot">🎱 মারুন!</button></div>
+</div>
 <div class="flash" id="flash"></div>
-<button type="button" class="emobtn" id="emoBtn" aria-label="অ্যাকশন">🎭</button>
-<div class="emotes" id="emotes" hidden><div class="emohead"><b>🎭 মজার অ্যাকশন</b><button type="button" id="emoClose" aria-label="বন্ধ করুন">✕</button></div><div class="emolist" id="emoList"></div><small>Q চেপেও খোলা যায়। হাঁটলে বা লাফ দিলে থেমে যাবে।</small></div>
-<div class="pmodal" id="msmoke" hidden><div class="pcard mres"><div class="rbig">🚬</div><h2 id="smkT"></h2><p>বারান্দায় গিয়ে একসাথে এক টান দেবেন? (ধূমপান স্বাস্থ্যের জন্য ক্ষতিকর, তবে আড্ডা স্বাস্থ্যের জন্য ভালো)</p><div class="prow"><button type="button" class="pghost" id="smkNo">না ভাই, ছেড়ে দিয়েছি</button><button type="button" class="pgo" id="smkYes">আসছি! 🚬</button></div></div></div>
+<div class="chase deskbar" id="deskbar" hidden><b>🎒 আপনার ডেস্কে যান!</b><span id="deskD"></span></div>
+<div class="pmodal" id="msmoke" hidden><div class="pcard mres"><div class="rbig">🚬</div><h2 id="smkT"></h2><p id="smkP"></p><div class="prow"><button type="button" class="pghost" id="smkNo">না ভাই, ছেড়ে দিয়েছি</button><button type="button" class="pgo" id="smkYes">আসছি! 🚬</button></div></div></div>
 <div class="chase" id="chase" hidden><b>🏃 দৌড় দাও! বস ধরতে আসছে!</b><span id="chaseD"></span></div>
 <div class="pmodal" id="mres" hidden>
  <div class="pcard mres" role="dialog" aria-modal="true">
@@ -176,7 +172,7 @@
   <div class="clk" id="hudClock"></div>
   <div class="keys" id="hudKeys"></div>
   <button class="act" id="hudAct" hidden></button>
-  <div class="actrow"><button class="act hurt" id="hudSlap" hidden>👋 চড় মারুন (F)</button><button class="act hurt" id="hudKick" hidden>🦵 লাথি মারুন (K)</button><button class="act inv" id="hudInvite" hidden></button></div>
+  <div class="actrow"><button class="act hurt" id="hudSlap" hidden>👋 চড় মারুন (F)</button><button class="act hurt" id="hudKick" hidden>🦵 লাথি মারুন (K)</button><button class="act inv" id="hudInvite" hidden></button><button class="act inv" id="hudBeg" hidden></button></div>
 </div>
 <div class="joy" id="joy" hidden><div class="knob" id="knob"></div></div>
 <div class="mbtns" id="mbtns" hidden>

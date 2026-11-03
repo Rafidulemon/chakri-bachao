@@ -339,3 +339,47 @@ body.touchui .emobtn{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}
 .lksw[aria-pressed="true"],.lkch[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--tape)}
 .lkch[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
 .plookreset{margin-top:10px;width:100%}
+
+.chase.deskbar{background:#2e7d32}
+
+.chase.deskbar{background:#2e7d32}
+
+/* ---------- a fresher login card ---------- */
+.idcard{border-radius:18px;overflow:hidden;box-shadow:0 22px 60px rgba(0,0,0,.45)}
+.idhead{background:linear-gradient(135deg,#e8682b 0%,#c7421a 100%)}
+.idhead .brand{display:flex;align-items:baseline;gap:10px;font-size:12px;letter-spacing:.06em;opacity:.95}
+.idhead .brand b{font-size:15px;letter-spacing:.18em;font-weight:800}
+.photo{border-style:solid;border-width:2px;background:linear-gradient(160deg,var(--chip),var(--panel-2,var(--chip)))}
+.photo .ph{font-size:44px;line-height:1;margin-top:8px}
+.meta{display:flex;flex-direction:column;justify-content:center;gap:2px}
+.meta .ldate{font-size:13px;color:var(--muted)}
+.meta .lclock{font-size:26px;font-weight:700;color:var(--ink);line-height:1.15}
+.meta .lstat{font-size:12.5px;color:var(--muted);margin-top:2px}
+.notice{grid-column:1 / -1;background:var(--chip);border:1px dashed var(--line);border-left:5px solid #e8682b;border-radius:10px;padding:8px 12px;font-size:13px;line-height:1.5}
+.notice b{display:block;font-size:12.5px;color:#e8682b;margin-bottom:1px}
+.welcome{background:rgba(46,204,89,.14);border:1px solid rgba(46,204,89,.4);border-radius:10px;padding:7px 10px;margin-bottom:8px;font-size:13px}
+.welcome[hidden]{display:none}
+.lform input:focus{outline:none;border-color:#e8682b;box-shadow:0 0 0 3px rgba(232,104,43,.25)}
+.go{border-radius:12px}
+
+/* the ID card gets a real card background: soft colour glows, a fine guilloche-style pattern, a watermark and a hologram sticker */
+.idcard{isolation:isolate;background:
+  radial-gradient(circle at 88% 14%,rgba(232,104,43,.16),transparent 46%),
+  radial-gradient(circle at 8% 92%,rgba(46,157,90,.13),transparent 42%),
+  repeating-linear-gradient(135deg,rgba(128,128,128,.055) 0 2px,transparent 2px 9px),
+  repeating-linear-gradient(45deg,rgba(128,128,128,.035) 0 1px,transparent 1px 7px),
+  var(--panel)}
+.idcard::before{content:"ECHOLOGYX";position:absolute;z-index:-1;left:-14px;bottom:70px;font-size:66px;font-weight:800;letter-spacing:.12em;color:var(--ink);opacity:.05;transform:rotate(-16deg);white-space:nowrap;pointer-events:none}
+.idcard::after{content:"";position:absolute;z-index:-1;right:18px;bottom:62px;width:50px;height:50px;border-radius:50%;pointer-events:none;opacity:.6;
+  background:conic-gradient(from 20deg,#ff7ac6,#ffd36b,#7cf5c7,#6fb3ff,#c28bff,#ff7ac6);box-shadow:inset 0 0 0 3px rgba(255,255,255,.35),0 0 12px rgba(255,255,255,.2)}
+.lform{background:linear-gradient(180deg,transparent,rgba(128,128,128,.06))}
+
+/* a paper ID card on a dark screen: always the light palette, so the card never melts into the background */
+.idcard{--panel:#f7f0dd;--panel-2:#ece2c4;--ink:#1f2a44;--muted:#5a6173;--line:#cbb985;--chip:#fffaee;--tape:#b3261e;color:var(--ink);border:1.5px solid #d9c98f;box-shadow:0 22px 60px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06)}
+.idcard input[type=text],.idcard input[type=email],.idcard input[type=password]{background:#fffdf6;color:#1f2a44;border:1.5px solid #cbb985}
+.idcard input::placeholder{color:#8a8f9c}
+.idcard::before{opacity:.07}
+
+.poolui .pu-pow{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:4px}.poolui .pu-pow label{font-weight:700;font-size:14px}.poolui .pu-pow input{flex:1;max-width:340px;accent-color:var(--tape)}
+.poolui .tu-b.ghost{background:transparent;color:var(--ink)}.poolui .tu-b.go{background:var(--tape);border-color:var(--tape);color:#fff;font-size:16px;padding:9px 18px}
+.poolui .tu-b{touch-action:none;user-select:none}

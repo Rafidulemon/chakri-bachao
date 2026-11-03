@@ -10,6 +10,7 @@ const CUT_USER: Record<string, number> = { slap: 15, kick: 12, desk: 10 };
 const CUT_NPC: Record<string, number> = { slap: 8, kick: 6, desk: 5 };
 const CUT_BOSS: Record<string, number> = { ceo: 40, hr: 30, mgr: 25 };   // hitting a superior is serious
 const XP_BOSS = 40;
+const CUT_DEFY = 5;   // refusing to apologise after a show-cause letter
 const SLAP_COOLDOWN = 10;   // seconds between slaps per person
 
 export async function POST(req: Request): Promise<Response> {
@@ -45,6 +46,19 @@ export async function POST(req: Request): Promise<Response> {
     await sql`insert into warnings (emp_id, boss, delta) values (${from}, 'slap', ${before - after})`;
     await sql`update slaps set status = 'complained', delta = ${before - after}, rating_before = ${before}, rating_after = ${after}, complained_at = now() where id = ${id}`;
     return json({ ok: true });
+  }
+
+  if (b.action === 'defy') {
+    const letter = await sql`select 1 from warnings where emp_id = ${me} and boss <> 'defy' and created_at > now() - interval '3 minutes'`;
+    if (!letter[0]) return json({ ok: false, error: 'এখন ক্ষমা না চাওয়ার মতো কোনো চিঠি নেই।' }, 404);
+    const again = await sql`select 1 from warnings where emp_id = ${me} and boss = 'defy' and created_at > now() - interval '3 minutes'`;
+    if (again[0]) return json({ ok: false, error: 'একবার জেদ দেখানোই যথেষ্ট!' }, 429);
+    const cur = await sql`select employment from employees where emp_id = ${me}`;
+    const before = Number(cur[0].employment);
+    const upd = await sql`update employees set employment = greatest(0, employment - ${CUT_DEFY}) where emp_id = ${me} returning employment`;
+    const after = Number(upd[0].employment);
+    await sql`insert into warnings (emp_id, boss, delta) values (${me}, 'defy', ${before - after})`;
+    return json({ ok: true, before, employment: after, delta: before - after });
   }
 
   if (b.action === 'boss') {

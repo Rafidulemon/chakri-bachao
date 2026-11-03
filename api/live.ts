@@ -62,6 +62,11 @@ export async function POST(req: Request): Promise<Response> {
     if (typeof a.col === 'string' && /^[RYGB]$/.test(a.col)) entry.col = a.col;
     if (a.draw === 1) entry.draw = 1;
     if (auto) entry.auto = 1;
+    // a pool shot: the angle, the power (0 to 1) and, after a foul, where the cue ball was placed
+    const num = (v: unknown, lo: number, hi: number) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
+    if (num(a.ang, -10, 10)) entry.ang = a.ang;
+    if (num(a.pw, 0, 1)) entry.pw = a.pw;
+    if (num(a.cx, -5, 5) && num(a.cz, -5, 5)) { entry.cx = a.cx; entry.cz = a.cz; }
     const rows = await sql`update live_matches set moves = moves || ${JSON.stringify([entry])}::jsonb
       where id = ${id} and status = 'go' and jsonb_array_length(moves) = ${seq} returning jsonb_array_length(moves) as n`;
     if (!rows[0]) return json({ ok: false, error: 'এই চাল আগেই পড়ে গেছে।', stale: true }, 409);

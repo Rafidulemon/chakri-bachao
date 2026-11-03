@@ -152,3 +152,13 @@ create index if not exists socials_from_idx on socials (from_id, created_at desc
 
 -- how the character looks beyond the preset model: skin tone, hair, clothes, glasses... (JSON, checked by the server)
 alter table employees add column if not exists look text;
+
+-- every employee has their own desk (an index into the office's list of desks), and nobody else gets the same one
+alter table employees add column if not exists desk integer;
+create unique index if not exists employees_desk_idx on employees (desk) where desk is not null;
+-- carrying the bag on the way in
+alter table presence add column if not exists bag boolean not null default false;
+-- invitations carry where the inviter stands, and when they were accepted, so both screens can play the same moment together
+alter table socials add column if not exists x real not null default 0;
+alter table socials add column if not exists z real not null default 0;
+alter table socials add column if not exists accepted_at timestamptz;

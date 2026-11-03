@@ -63,6 +63,33 @@ function ring(freq, dec, vol, at = 0) { tone(freq, dec, { type: 'sine', vol, at 
 // low body of an impact
 function thud(freq, dec, vol, at = 0) { tone(freq, dec, { type: 'sine', vol, at }); noise(dec, { freq: freq * 3, vol: vol * 0.5, at }); }
 
+// a voice-like sound: a buzzing source shaped by two vowel resonances (formants), so it reads as someone saying "ow" or grunting
+function voice(f0, f1, f2, dur, { vol = 0.3, at = 0, to0 = null, to1 = null, to2 = null, breath = 0.2, vib = 5 } = {}) {
+  if (!ensure() || muted) return;
+  vol *= V;
+  const t = ctx.currentTime + at;
+  const o = ctx.createOscillator();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(f0, t);
+  if (to0) o.frequency.exponentialRampToValueAtTime(to0, t + dur);
+  const lfo = ctx.createOscillator(), lg = ctx.createGain();
+  lfo.frequency.value = vib; lg.gain.value = f0 * 0.025; lfo.connect(lg); lg.connect(o.frequency);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
+  g.gain.setValueAtTime(vol, t + dur * 0.5);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  for (const [f, to, q, gn] of [[f1, to1, 7, 1], [f2, to2, 9, 0.55]]) {
+    const bp = ctx.createBiquadFilter(), pg = ctx.createGain();
+    bp.type = 'bandpass'; bp.Q.value = q; bp.frequency.setValueAtTime(f, t);
+    if (to) bp.frequency.exponentialRampToValueAtTime(to, t + dur);
+    pg.gain.value = gn * 2.4; o.connect(bp); bp.connect(pg); pg.connect(g);
+  }
+  g.connect(master);
+  o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+  if (breath) noise(dur * 0.8, { freq: 1800, q: 0.8, type: 'bandpass', vol: vol * breath, at });
+}
+
 // Real recordings. A sound listed here uses its file(s) instead of the synthesized version (several files = random variant).
 // Any file named public/sounds/<soundName>.mp3/.wav/.ogg is also picked up automatically.
 const FILES = {
@@ -137,8 +164,32 @@ const SOUNDS = {
   btn: () => { tone(1000, 0.08, { type: 'square', vol: 0.1 }); tone(1000, 0.08, { type: 'square', vol: 0.1, at: 0.12 }); },
   door: () => { noise(0.7, { freq: 300, to: 1400, q: 2, type: 'bandpass', vol: 0.35 }); tone(110, 0.5, { type: 'sine', vol: 0.12, to: 70 }); },
   pop: () => tone(520, 0.1, { type: 'sine', vol: 0.15, to: 900 }),
-  slap: () => { noise(0.05, { freq: 2400, type: 'highpass', vol: 0.55 }); noise(0.12, { freq: 900, type: 'bandpass', q: 1.5, vol: 0.32, at: 0.005 }); thud(160, 0.09, 0.45); tone(1300, 0.04, { type: 'square', vol: 0.08, to: 500 }); },
-  kick: () => { noise(0.04, { freq: 1500, type: 'highpass', vol: 0.3 }); thud(95, 0.14, 0.7); noise(0.1, { freq: 400, vol: 0.25, at: 0.01 }); },
+  // palm on a cheek: a razor-thin crack, the skin "pop", the flesh behind it, and a little room tail
+  slap: () => {
+    noise(0.007, { freq: 3200, type: 'highpass', vol: 0.9 });
+    noise(0.05, { freq: 1700, q: 2.2, type: 'bandpass', vol: 0.55, at: 0.002 });
+    noise(0.09, { freq: 520, type: 'lowpass', vol: 0.42, at: 0.004 });
+    tone(190, 0.1, { type: 'sine', vol: 0.5, to: 85 });
+    tone(2300, 0.025, { type: 'square', vol: 0.05, to: 900 });
+    noise(0.012, { freq: 3000, type: 'highpass', vol: 0.22, at: 0.032 });          // slap-back from the walls
+    noise(0.22, { freq: 800, q: 0.7, type: 'bandpass', vol: 0.07, at: 0.05, to: 400 });
+  },
+  // a shoe into a body or a desk: the leather tap, a deep thump, cloth, and the furniture groaning
+  kick: () => {
+    noise(0.012, { freq: 1400, type: 'highpass', vol: 0.5 });
+    thud(70, 0.26, 0.95);
+    noise(0.14, { freq: 450, type: 'lowpass', vol: 0.55, at: 0.004 });
+    noise(0.09, { freq: 1000, q: 1.2, type: 'bandpass', vol: 0.3, at: 0.006 });
+    tone(140, 0.2, { type: 'triangle', vol: 0.25, to: 70, at: 0.01 });
+    noise(0.3, { freq: 600, q: 0.8, type: 'bandpass', vol: 0.06, at: 0.08, to: 250 });
+  },
+  whoosh: () => { noise(0.17, { freq: 300, to: 2400, q: 1.4, type: 'bandpass', vol: 0.2 }); noise(0.14, { freq: 1200, to: 500, q: 0.9, type: 'bandpass', vol: 0.08, at: 0.1 }); },
+  ouch: () => { voice(310, 800, 1200, 0.36, { vol: 0.5, to0: 215, to1: 520, to2: 900 }); voice(260, 560, 1000, 0.22, { vol: 0.28, at: 0.3, to0: 170, breath: 0.12 }); },
+  grunt: () => voice(120, 460, 820, 0.34, { vol: 0.62, to0: 88, to1: 380, to2: 700, breath: 0.55, vib: 7 }),
+  gasp: () => noise(0.3, { freq: 600, to: 3200, q: 0.9, type: 'bandpass', vol: 0.32 }),
+  sting: () => { tone(98, 0.9, { type: 'sawtooth', vol: 0.3, to: 49 }); tone(104, 0.9, { type: 'sawtooth', vol: 0.22, to: 52 }); thud(55, 0.5, 0.7); },
+  rage: () => { voice(92, 480, 860, 0.75, { vol: 0.75, to0: 74, to1: 380, to2: 700, breath: 0.5, vib: 10 }); voice(110, 520, 900, 0.5, { vol: 0.5, at: 0.55, to0: 82, breath: 0.4 }); },
+  slam: () => { thud(70, 0.3, 1); noise(0.3, { freq: 500, vol: 0.5 }); },
   bonk: () => { thud(180, 0.1, 0.55); ring(520, 0.12, 0.25); tone(250, 0.18, { type: 'triangle', vol: 0.12, to: 120, at: 0.05 }); },
   jump: () => tone(300, 0.16, { type: 'sine', vol: 0.14, to: 640 }),
   land: () => thud(120, 0.06, 0.22),

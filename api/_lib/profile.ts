@@ -5,6 +5,8 @@ export const AVATARS = ['🧑‍💻', '👩‍💻', '🥷', '🧙', '🦸', '�
 export const GAMES = ['pool', 'carrom', 'uno', 'chess', 'ludo'] as const;
 // seconds of silence before someone counts as offline
 export const ONLINE_SECONDS = 12;
+// how many desks the office has (the game's workspace has 84 seats)
+export const DESK_COUNT = 84;
 export type Game = (typeof GAMES)[number];
 export type Ratings = Record<Game, number>;
 
@@ -52,6 +54,6 @@ export function shape(e: Row, ratings: Ratings = base()) {
     empId: e.emp_id, name: e.name, email: e.email, designation: e.designation, branch: e.branch, department: e.department,
     gender: e.gender === 'female' ? 'f' : e.gender === 'male' ? 'm' : '', nickname: e.nickname || '',
     avatar: e.avatar || (e.gender === 'female' ? '👩‍💻' : '🧑‍💻'), avatarBg: e.avatar_bg || '#ffd9a8',
-    look: parseLook(e.look), xp: Number(e.xp) || 0, employment: e.employment == null ? 100 : Number(e.employment), model: e.model == null ? 0 : Number(e.model), bio: e.bio || '', snack: e.snack || '', phone: e.phone || '', ratings,
+    look: parseLook(e.look), desk: e.desk == null ? null : Number(e.desk), xp: Number(e.xp) || 0, employment: e.employment == null ? 100 : Number(e.employment), model: e.model == null ? 0 : Number(e.model), bio: e.bio || '', snack: e.snack || '', phone: e.phone || '', ratings,
   };
 }
