@@ -404,3 +404,5 @@ body.touchui .emobtn{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}
 .actb span{grid-row:1/3;font-size:26px;text-align:center}.actb b{font-size:14px}.actb small{font-size:11px;color:var(--muted);line-height:1.25}
 .actb:hover:not(:disabled){border-color:var(--tape);background:rgba(0,0,0,.04)}.actb:disabled{opacity:.45;cursor:not-allowed}
 @media (max-width:640px){.actlist{grid-template-columns:1fr}.actbtn{right:calc(168px + env(safe-area-inset-right,0px))}}
+
+.wloc{margin-left:auto;border:1px solid #d9cfba;background:#fff;border-radius:8px;padding:2px 8px;font-size:15px;cursor:pointer;flex:none}.wloc:hover{background:#fff4d6}
