@@ -488,16 +488,7 @@ function perimPath(cx,cz,ax,az,from,to){const f=[from[0]-cx,from[1]-cz],t=[to[0]
 
 /* ================= build the office ================= */
 const PRES=[-10.6,3.8];
-const COUPLE=[],CP={busy:false,until:0,say:3};   // the couple on the stairs
 const CAMS=[];   // the CCTV cameras
-const GU={P:null,said:{},caught:false,away:false,whistled:-1};   // the security guard who now and then walks down and catches them
-const GU_IN=[[3.9,-15.35],[5.6,-15.35],[8.64,-15.35],[9.35,-14.75],[8.64,-14.15],[7.5,-14.15]],GU_SLOT=120,GU_CATCH=9;
-// the stairs: two flights side by side that turn at a landing, going down 3.4 m. The back lane goes east from the entrance, the front lane comes back west to the bottom hall.
-const STAIR={xv:5.6,xm:8.64,xe:9.9,zr:-14.8,run:.38,drop:.21,n:8};
-const stairH=(x,z)=>{const S=STAIR,bot=-2*S.n*S.drop;if(x<3.7||x>S.xe||z<-15.9||z>-13.5)return 0;
-  if(x<S.xv)return z<S.zr?0:bot;
-  if(x<S.xm)return z<S.zr?-Math.min(S.n,Math.floor((x-S.xv)/S.run)+1)*S.drop:-(S.n+Math.min(S.n,Math.floor((S.xm-x)/S.run)+1))*S.drop;
-  return -S.n*S.drop;};
 const ZONES=[
   {id:'work',bn:'ওয়ার্কস্পেস',en:'Workspace',what:'আয়তাকার অফিসের মাঝখানে, আগের আড়াই গুণ বড়। সফটওয়্যার ইঞ্জিনিয়ারদের ল্যাপটপে Claude আর মনিটরে VS Code, QA দের Excel বাগ লিস্ট আর ব্রাউজার, ডিজাইনারদের Excel আর Figma।',r:[-12.5,14.75,-13.5,.4],c:[1,-6.8],sp:[1,-12.5]},
   {id:'w2',bn:'ওয়ার্কস্পেস',en:'Workspace',r:[-16,18,-13.5,7.5],hide:true},
@@ -510,7 +501,6 @@ const ZONES=[
   {id:'dine',bn:'ডাইনিং',en:'Dining',what:'ডান দিকে ওয়াশরুমের নিচে, লম্বালম্বি। বাঁ পাশের দরজা ওয়ার্কস্পেসের মাঝের হাঁটার পথের সাথে এক লাইনে। ৬টা টেবিল, প্রতিটায় ৪টা বসার জায়গা, মাথার দিকে কিচেন কাউন্টার।',r:[14.75,18,-10.5,.5],c:[16.4,-4.5],sp:[14.2,-6.75]},
   {id:'hr',bn:'এইচআর রুম',en:'HR room',what:'নিচের ডান কোণে, ডাইনিংয়ের ঠিক নিচে। দুটো ঘোরানো টেবিলে দুজন এইচআর, প্রত্যেকের একটা মনিটরে Excel, সামনে একজন করে কর্মী বসে।',r:[14.75,18,.5,7.5],c:[16.4,4],sp:[14.2,4]},
   {id:'bal',bn:'বারান্দা',en:'Balcony',what:'গেমিং রুম থেকে এইচআর রুম পর্যন্ত লম্বা ঢাকা বারান্দা। তিনজন দাঁড়িয়ে সিগারেট, তিনজন বেতের চেয়ারে চা, দুজন প্ল্যান্টারের কিনারায় আর দুজন মেঝেতে বসে সিগারেট।',r:[-6.2,18.3,7.5,10.1],c:[6,8.7],sp:[2.5,8.5]},
-  {id:'stairs',bn:'সিঁড়ি',en:'Stairs',what:'মেইন গেটের লিফট-লবির ডান পাশের সিঁড়ি নিচে নেমে গেছে। নিচের ল্যান্ডিংয়ে একটা জুটি গা ঘেঁষে বসে গুনগুন করে।',r:[3.7,9.9,-15.9,-13.5],c:[7.1,-14.5],sp:[4.1,-15.2],hide:true},
   {id:'gate',bn:'মেইন গেট ও লিফট',en:'Main gate',what:'উপরের দেয়ালের ঠিক মাঝখানে, ঝাপসা কাচের বন্ধ দরজা। ভেতরে দরজার পাশে এক্সিট বাটন, বাইরে ফেস স্ক্যানার। হেঁটে দেখুন মোডে কাছে গিয়ে E চাপুন।',r:[-1.7,3.7,-15.9,-13.5],c:[1,-14.7],sp:[1,-14.2]}
 ];
 // random numbers the pool and carrom controllers use. A live match swaps in a seeded one so both players see the same game.
@@ -532,52 +522,9 @@ function build(){
   bx(null,WX+.3,.3,WZ+.3,CX,-.3,CZ,'#b9b4aa');bx(null,WX,12,WZ,CX,GY,CZ,'#cfc9bd');
   for(let f=0;f<4;f++){bx(null,.04,1.3,WZ-1,X1+.02,GY+1+f*3,CZ,'#4f6070',{cast:false});bx(null,WX-1,1.3,.04,CX,GY+1+f*3,Z1+.02,'#4f6070',{cast:false});bx(null,WX-1,1.3,.04,CX,GY+1+f*3,Z0-.02,'#4f6070',{cast:false});bx(null,.04,1.3,WZ-1,X0-.02,GY+1+f*3,CZ,'#4f6070',{cast:false});}
   bx(null,5.4,.3,2.4,1,-.3,Z0-1.2,'#b9b4aa');floor(-1.7,3.7,Z0-2.4,Z0,TX.marble,2,null,.004,.3);
-  bx(wallsG,5.4,H,.12,1,0,Z0-2.4,wallM);addCol(-1.8,3.8,Z0-2.5,Z0-2.34);addCol(-1.82,-1.7,Z0-2.4,Z0);
+  bx(wallsG,5.4,H,.12,1,0,Z0-2.4,wallM);addCol(-1.8,3.8,Z0-2.5,Z0-2.34);addCol(-1.82,-1.7,Z0-2.4,Z0);addCol(3.7,3.82,Z0-2.4,Z0);
   for(const x of [0,2]){bx(wallsG,1.05,2.3,.05,x,0,Z0-2.32,'#2a2d31');bx(wallsG,.47,2.1,.03,x-.24,0,Z0-2.29,mat('#aeb5bd',.25,.7),{cast:false});bx(wallsG,.47,2.1,.03,x+.24,0,Z0-2.29,mat('#aeb5bd',.25,.7),{cast:false});}
   {const P=mkWoman();place(P,1,Z0-1.4,Math.PI);P.v='scroll';addPhone(P);acts.push({P,fn:aScroll});addCol(.75,1.25,Z0-1.65,Z0-1.15);}
-  /* ---------- the stairs next to the lift lobby: a wooden flight down to a landing, a carpeted flight on to the bottom hall, where a couple sits ---------- */
-  {const S=STAIR,zr=S.zr,zc=Z0-1.2,LAB=-S.n*S.drop,BOT=2*LAB,DEEP=3.7,white='#efede7',wood='#c8985c',carpet='#b6a894',black='#1b1b1b',wall='#e4e2dc',TOPW=H+DEEP;
-    const bk=-15.35,bw=1.1,fk=-14.15,fw=1.3;   // the back lane and the front lane
-    // walls and the pit they stand in
-    bx(wallsG,S.xe-3.7,TOPW,.12,(3.7+S.xe)/2,-DEEP,Z0-2.4,wall);addCol(3.7,S.xe+.05,Z0-2.46,Z0-2.34);
-    bx(wallsG,.12,TOPW,2.4,S.xe,-DEEP,zc,wall);addCol(S.xe-.05,S.xe+.07,Z0-2.4,Z0);
-    bx(wallsG,.12,TOPW,fw,3.7,-DEEP,fk,wall);addCol(3.64,3.76,zr,Z0);
-    addCol(3.7,S.xe+.05,Z0-.02,Z0+.12);addCol(3.7,S.xm,zr-.04,zr+.04);
-    // the entrance (still on this floor) and the bottom hall
-    bx(null,S.xv-3.7,DEEP,bw,(3.7+S.xv)/2,-DEEP,bk,'#d9d6cf');floor(3.7,S.xv,Z0-2.4,zr,TX.marble,2,null,.004,.3);
-    bx(null,S.xv-3.7,DEEP+BOT,fw,(3.7+S.xv)/2,-DEEP,fk,carpet);
-    // the landing, in hardwood
-    bx(null,S.xe-S.xm,DEEP+LAB-.05,2.4,(S.xm+S.xe)/2,-DEEP,zc,white);bx(null,S.xe-S.xm,.05,2.4,(S.xm+S.xe)/2,LAB-.05,zc,'#b98b5c');
-    // the steps: white risers, wooden treads going down; carpet on the lower flight
-    const top1=n=>-n*S.drop,top2=n=>LAB-n*S.drop;
-    for(let n=1;n<=S.n;n++){
-      const x1=S.xv+(n-.5)*S.run;bx(null,S.run,DEEP+top1(n)-.045,bw,x1,-DEEP,bk,white);bx(null,S.run+.03,.045,bw,x1,top1(n)-.045,bk,wood);
-      const x2=S.xm-(n-.5)*S.run;bx(null,S.run,DEEP+top2(n)-.045,fw,x2,-DEEP,fk,white);bx(null,S.run+.03,.045,fw,x2,top2(n)-.045,fk,carpet);}
-    // the handrail and the black balusters along the open side, a newel post at every turn
-    const a1=Math.atan2(-LAB,S.xm-S.xv),Lr=Math.hypot(S.xm-S.xv,LAB),xc=(S.xv+S.xm)/2;
-    bx(null,Lr,.06,.07,xc,LAB/2+.92-.03,zr,wood,{rz:-a1,cast:false});bx(null,Lr,.06,.07,xc,(LAB+BOT)/2+.92-.03,zr,wood,{rz:a1,cast:false});
-    bx(null,S.xv-3.7,.06,.07,(3.7+S.xv)/2,.92,zr,wood,{cast:false});
-    for(let n=1;n<=S.n;n++){const xa=S.xv+(n-.5)*S.run,xb=S.xm-(n-.5)*S.run;bx(null,.022,.88,.022,xa,top1(n),zr,black,{cast:false});bx(null,.022,.88,.022,xb,top2(n),zr,black,{cast:false});}
-    for(let x=3.8;x<S.xv;x+=.16)bx(null,.022,.9,.022,x,0,zr,black,{cast:false});
-    for(const [x,y] of [[S.xv,0],[S.xm,LAB],[S.xv+.06,BOT],[3.78,0]])bx(null,.11,1.18,.11,x,y,zr,wood,{cast:false});
-    // a window in the end wall, bright like daylight, and a lamp over the landing
-    bx(wallsG,.05,1.34,1.14,S.xe-.07,LAB+.85,zc,'#f6f4ef',{cast:false});bx(null,.03,1.2,1.0,S.xe-.1,LAB+.92,zc,new THREE.MeshBasicMaterial({color:lin('#d6e8f4')}),{cast:false});
-    bx(null,.035,1.2,.03,S.xe-.11,LAB+.92,zc,'#f6f4ef',{cast:false});bx(null,.035,.03,1.0,S.xe-.11,LAB+1.52,zc,'#f6f4ef',{cast:false});
-    const lamp=new THREE.PointLight(0xfff0d8,1.1,9);lamp.position.set(7.3,LAB+1.6,-14.7);scene.add(lamp);
-    const tx=canvasTex(512,128,(c,w,h)=>{c.fillStyle='#1d6b3c';c.fillRect(0,0,w,h);c.fillStyle='#fff';c.font='bold 54px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('⬇ সিঁড়ি · Stairs',w/2,h/2+3);});
-    plane(null,1.7,.43,4.75,2.3,Z0-2.33,new THREE.MeshBasicMaterial({map:tx}),0,0);
-    // the couple sit on the lower flight, close together, feet on the next step down
-    const man=mkMan({style:'shirt',top:'#2f4f7a',bot:'#23252b',hs:'short',hair:'#1c1c1c',h:.9}),wom=mkWoman({top:'#c2456b',glasses:false,hs:'bun',sandal:true});
-    const cx=S.xm-4.55*S.run+.1,cy=top2(6);
-    place(man,cx,-14.35,-Math.PI/2);place(wom,cx,-13.8,-Math.PI/2);for(const q of [man,wom]){q.root.position.y=cy;q.y=cy;q.seatH=.22;q.root.visible=false;}
-    man.side=1;wom.side=-1;man.couple=wom.couple=true;COUPLE.push(man,wom);
-    acts.push({P:man,fn:aCouple},{P:wom,fn:aCouple});
-    const gd=mkMan({style:'shirt',top:'#1c2b4a',bot:'#1c2b4a',hs:'short',hair:'#222',sleeve:'short',h:.95});
-    {const g=gd.gp(gd.J.head,0,.12,0);gd.pm(g,cylG(.105,.115,.07,16),mat('#10192e',.5),0,0,0);gd.pm(g,cylG(.12,.12,.012,16),mat('#10192e',.5),0,-.03,.06);
-      const tg=gd.gp(gd.J.rHand,0,-.08,.03);tg.rotation.x=1.15;gd.pm(tg,cylG(.017,.017,.56,10),mat('#2a2018',.5),0,-.12,0);gd.pm(tg,cylG(.019,.019,.1,10),mat('#9b9b9b',.4),0,.13,0);}   // a wooden lathi, no gun
-    place(gd,3.9,-15.35,Math.PI/2);gd.root.visible=false;GU.P=gd;
-    // CCTV in the stairwell (top, landing, bottom hall)
-    cctv(7.3,2.45,-15.84,0);cctv(S.xe-.08,LAB+2.3,-14.7,-Math.PI/2);cctv(3.76,BOT+2.3,fk,Math.PI/2);}
   // CCTV in the lift lobby and in the workspace
   cctv(.9,2.55,Z0-2.34,0);
   for(const [x,z,yw] of [[-8,Z0+.1,0],[8,Z0+.1,0],[X0+.1,-5,Math.PI/2],[DXL-.1,-9,-Math.PI/2]])cctv(x,2.5,z,yw);
@@ -968,17 +915,6 @@ function aStir(P,t){rest(P);const J=P.J;J.spine.rotation.x=.2;J.neck.rotation.x=
   J.lSh.rotation.set(-.85,0,-.1);J.lEl.rotation.x=-.45;J.neck.rotation.y=Math.sin(t*.2)*.2;}
 function aWatchSofa(P,t){rest(P);sit(P,.42);const J=P.J;J.spine.rotation.x=-.18;J.neck.rotation.set(.1,Math.sin(t*.25)*.5+.2,0);J.lSh.rotation.set(-.4,0,-.05);J.lEl.rotation.x=-.8;J.rSh.rotation.set(-.4,0,.05);J.rEl.rotation.x=-.8;
   J.lHip.rotation.y=-.25;J.lKn.rotation.x-=.2;}
-// the couple on the stairs: heads together, giggling, a hand in her hair
-const FLIRT_M=['তোমার হাসিতে আমার ল্যাপটপের ব্যাটারি ফুল হয়ে যায়! 😍','তুমি আমার কোডের মতো, যত দেখি তত বুঝি না, কিন্তু ভালো লাগে!','ডিনারে যাবে? বিল তোমার, আমার তো ইনক্রিমেন্ট নেই।','তোমাকে দেখলেই আমার ডেডলাইন ভুলে যাই 💕'];
-const FLIRT_W=['ইশ, আস্তে বলো, অফিসের দেয়ালেরও কান আছে! 🙈','তুমি না একদম ওয়াইফাইয়ের মতো, কাছে এলেই সিগন্যাল ফুল!','এইচআর দেখলে কিন্তু রিপোর্ট হয়ে যাবে!','আজ লাঞ্চ ব্রেকে আবার এখানে, ঠিক আছে? 💕'];
-function aCouple(P,t,dt){rest(P);sit(P,P.seatH||.46);const J=P.J,sd=P.side,sw=Math.sin(t*.9+P.ph);
-  if(GU.caught){J.lSh.rotation.set(-2.7,0,.3);J.rSh.rotation.set(-2.7,0,-.3);J.lEl.rotation.x=-.3;J.rEl.rotation.x=-.3;J.neck.rotation.set(-.1,0,0);J.spine.rotation.x=-.05;talk(P,t,true);return;}   // caught red-handed
-  J.spine.rotation.x=.1;J.spine.rotation.z=-sd*(.1+sw*.03);J.neck.rotation.set(.05,sd*(.55+sw*.08),0);J.hips.rotation.z=sw*.02;
-  if(sd>0){J.lSh.rotation.set(-.2,0,-1.25);J.lEl.rotation.x=-.4;J.rSh.rotation.set(-.5,0,.1);J.rEl.rotation.x=-1.1;}
-  else{J.rSh.rotation.set(-2.3+Math.sin(t*3)*.08,0,-.25);J.rEl.rotation.x=-1.9;J.lSh.rotation.set(-.5,0,-.1);J.lEl.rotation.x=-1.1;}
-  talk(P,t,Math.sin(t*1.7+P.ph)>.1);
-  if(sd>0&&!CP.busy&&P.root.visible){CP.say-=dt;if(CP.say<=0){CP.say=6+Math.random()*4;const near=Math.hypot(player.x-P.x,player.z-P.z)<9,w=COUPLE[1],a=Math.random()<.5;
-    if(near)tmpBubble(a?P:w,(a?FLIRT_M:FLIRT_W)[Math.floor(Math.random()*4)],3.2);}}}
 function aWalker(P,t,dt){if(!P.path||!P.path.length){P.dirF=!P.dirF;P.path=(P.dirF?P.path0.slice():P.path0.slice().reverse());}
   moveAlong(P,dt);const J=P.J;if(P.tray){J.lSh.rotation.set(-.55,0,-.25);J.lEl.rotation.x=-1.3;J.rSh.rotation.set(-.55,0,.25);J.rEl.rotation.x=-1.3;J.lHand.rotation.y=1.4;J.rHand.rotation.y=-1.4;}
   if(P.file){J.lSh.rotation.set(-.3,0,-.42);J.lEl.rotation.x=-1.75;}}
@@ -1194,7 +1130,7 @@ let lastZone='';
 const GRAV=22,JUMP_V=6.6;   // a jump peaks at about a metre, enough for a desk or a sofa
 // does something tall enough to get between you and the camera stand here? (low furniture doesn't count: the camera looks down over it)
 function camBlocked(x,z,y){for(const c of colliders){const top=c[4]===undefined?99:c[4];if(top<y+1.7)continue;const cx=Math.max(c[0],Math.min(x,c[1])),cz=Math.max(c[2],Math.min(z,c[3]));if((x-cx)*(x-cx)+(z-cz)*(z-cz)<.09)return true;}return x<-16||x>18.6||z<-16||z>10.6;}
-function supportAt(x,z,y){let best=stairH(x,z);for(const c of colliders){const top=c[4]===undefined?99:c[4];if(top>1.3||top<=best)continue;
+function supportAt(x,z,y){let best=0;for(const c of colliders){const top=c[4]===undefined?99:c[4];if(top>1.3||top<=best)continue;
   if(x>c[0]-.1&&x<c[1]+.1&&z>c[2]-.1&&z<c[3]+.1&&top<=y+.12)best=top;}return best;}
 function airPose(P){const J=P.J;J.lSh.rotation.set(-.9,0,.5);J.rSh.rotation.set(-.9,0,-.5);J.lHip.rotation.x=-.7;J.rHip.rotation.x=-.35;J.lKn.rotation.x=.9;J.rKn.rotation.x=.5;J.spine.rotation.x=.05;}
 // Hand-keyed body movement: kf() reads a value from a list of [time, value] keys, with smooth easing between them
@@ -1284,57 +1220,15 @@ function impact(tg,kind){if(!tg)return;HS.t=.07;SHAKE.t=.2;const word=kind==='ki
   if(tg.kind==='user'){tg.r.hitAge=0;tg.r.hitKind=react;tmpBubble(tg.P,tg.desk?'আমার ডেস্কে লাথি?! 😱':'আউ! 😵',1.8);
     api('/api/slap',{action:'slap',target:tg.id,kind:tg.desk?'desk':kind}).then(d=>{
       if(d&&d.ok)toast((kind==='kick'?'ধুম! ':'চটাস! ')+tg.name+' এইচআরে অভিযোগ করতে গেছেন… শো-কজ আসছে!',4500);else toast((d&&d.error)||word+'টা লাগেনি, আবার চেষ্টা করুন।',3000);});}
-  else{if(tg.P.couple){coupleHit(tg.P,kind);return;}const P=tg.P;if(!HITS.some(h=>h.P===P))HITS.push({P,age:0,dur:react==='slap'?1.4:react==='kick'?1.7:1.2,kind:react,x:P.root.position.x,y0:P.root.position.y,z:P.root.position.z});
+  else{const P=tg.P;if(!HITS.some(h=>h.P===P))HITS.push({P,age:0,dur:react==='slap'?1.4:react==='kick'?1.7:1.2,kind:react,x:P.root.position.x,y0:P.root.position.y,z:P.root.position.z});
     const L=tg.desk?['আমার ডেস্কে লাথি?! ডেস্কটা তো আমার সন্তানের মতো!','এই! ডেস্কের কী দোষ?!','আমি এইচআরকে বলছি!']:['আউ! এইচআরকে বলছি!','এই! কী করলেন?!','আমি কিন্তু রেকর্ড করে রাখলাম!','ওরে বাবা! আমার শরীর!'];
     tmpBubble(P,L[Math.floor(Math.random()*L.length)],2.6);
     if(!NET.npcPending){NET.npcPending=true;const lk=tg.desk?'npcDesk':kind==='kick'?'npcKick':'npcSlap';setTimeout(()=>npcShowCause(lk),6500);}}}
-// the couple on the stairs get what they deserve and HR is delighted
-function coupleHit(P,kind){if(CP.busy)return;CP.busy=true;
-  for(const q of COUPLE)if(!HITS.some(h=>h.P===q))HITS.push({P:q,age:0,dur:kind==='kick'?1.7:1.4,kind:kind==='kick'?'kick':'slap',x:q.root.position.x,y0:q.root.position.y,z:q.root.position.z});
-  const other=COUPLE.find(q=>q!==P);
-  tmpBubble(P,['আউউ! আমরা তো শুধু গল্প করছিলাম!','ছি ছি! আর কোনোদিন করব না! 🙏','মাফ করবেন স্যার, ভুল হয়ে গেছে!'][Math.floor(Math.random()*3)],2.4);
-  tmpBubble(other,['ইশশ! চলো পালাই! 🏃','এইচআর জানলে কী হবে?!','আমি তো আগেই বলেছিলাম এখানে না!'][Math.floor(Math.random()*3)],2.4);
-  setTimeout(()=>{for(const q of COUPLE){q.root.getWorldPosition(_v);puff(_v,.08,1.4,_v2.set(0,.2,0),.6);}toast('জুটি লজ্জায় পালিয়েছে 🏃💨 সিঁড়ি এখন ফাঁকা',3500);CP.until=performance.now()+120000;},2300);
-  api('/api/slap',{action:'couple',kind}).then(d=>{setTimeout(()=>{if(d&&d.ok){if(PROFILE)PROFILE.employment=d.employment;showPraise(d.before,d.employment,d.delta);}else{if(d&&d.error)toast(d.error,3500);}},2600);});}
-// the guard: every couple of minutes there may be a visit. Everything comes from the shared clock, so everybody sees the same thing at the same time.
-const GU_CUM=(()=>{const c=[0];for(let i=1;i<GU_IN.length;i++)c.push(c[i-1]+Math.hypot(GU_IN[i][0]-GU_IN[i-1][0],GU_IN[i][1]-GU_IN[i-1][1]));return c;})();
-const GU_L=GU_CUM[GU_CUM.length-1],GU_TIN=GU_L/1.4,GU_TOUT=GU_L/1.5;
-const guardEvent=k=>{const r=mulberry32(k*7331+5);return r()<.6?{off:15+r()*70}:null;};
-const GU_LINES=[[.3,'g','আরে আরে! এখানে কী হচ্ছে?! 😠'],[1.6,'m','ভাইয়া, আমরা শুধু… গল্প করছিলাম!'],[3.2,'g','গল্প? হাতেনাতে ধরেছি আমি! অফিস কি পার্ক নাকি?'],[4.8,'w','আর হবে না ভাইয়া, প্লিজ এইচআরকে বলবেন না! 🙏'],[6.4,'g','সে দেখা যাবে। চলুন, দুজনেই আমার সাথে!']];
 function cctv(x,y,z,yaw){const g=grp(staticG,x,y,z,yaw);bx(g,.07,.07,.05,0,-.035,.02,'#d8dadd',{cast:false});
   const h=grp(g,0,-.09,.07);bx(h,.1,.09,.24,0,-.045,.08,'#eceef0',{cast:false});bx(h,.11,.012,.26,0,.0,.08,'#bfc3c8',{cast:false});
   cy(h,.034,.05,0,-.07,.21,'#101216',{rx:Math.PI/2,cast:false});cy(h,.02,.006,0,-.045,.236,'#2a3a55',{rx:Math.PI/2,cast:false});
   const led=sp(h,.011,.011,.011,.04,-.012,.19,new THREE.MeshBasicMaterial({color:0xff2222}),{cast:false});CAMS.push({h,led,ph:Math.random()*6});return g;}
 function cctvUpdate(t){for(const c of CAMS){c.h.rotation.y=Math.sin(t*.45+c.ph)*.55;const on=Math.floor(t*1.1+c.ph)%2===0;c.led.material.color.setRGB(on?1:.22,.05,.05);}}
-function guardUpdate(dt,t){const P=GU.P;if(!P)return;const T=worldT(),k=Math.floor(T/GU_SLOT);let act=null,away=false,caught=false;
-  for(const sl of [k-1,k]){const ev=guardEvent(sl);if(!ev)continue;const u=T-(sl*GU_SLOT+ev.off);
-    if(u>=0&&u<GU_TIN+GU_CATCH+GU_TOUT)act={sl,u};
-    if(u>=GU_TIN+GU_CATCH-.5&&u<GU_TIN+GU_CATCH+90)away=true;
-    if(u>=GU_TIN+.6&&u<GU_TIN+GU_CATCH-.5)caught=true;}
-  GU.away=away;GU.caught=caught;
-  if(!act){P.root.visible=false;return;}
-  const u=act.u;let d,walking=false,back=false;
-  if(u<GU_TIN){d=u*1.4;walking=true;}else if(u<GU_TIN+GU_CATCH)d=GU_L;else{d=GU_L-(u-GU_TIN-GU_CATCH)*1.5;walking=true;back=true;}
-  const q=posOn(GU_IN,GU_CUM,d);P.x=q.x;P.z=q.z;P.yaw=back?q.yaw+Math.PI:q.yaw;P.root.visible=true;
-  P.root.position.set(q.x,stairH(q.x,q.z),q.z);P.root.rotation.y=P.yaw;rest(P);const J=P.J;
-  if(walking){P.wph=(P.wph||0)+dt*1.4*4.6;walkPose(P,P.wph,1);}
-  else{J.rSh.rotation.set(-1.45,0,.1);J.rEl.rotation.x=-.2;J.lSh.rotation.set(-.3,0,-.1);J.lEl.rotation.x=-1.0;J.neck.rotation.x=.1;J.spine.rotation.x=.05;talk(P,t,caught);}
-  // what everybody says and hears, once each (only if you are close enough to care)
-  const near=Math.hypot(player.x-q.x,player.z-q.z)<14;const cu=u-GU_TIN;
-  if(near){
-    if(cu>=.1&&GU.whistled!==act.sl){GU.whistled=act.sl;sfx.play('whistle');}
-    GU_LINES.forEach((l,i)=>{const key=act.sl+':'+i;if(cu>=l[0]&&cu<l[0]+2.5&&!GU.said[key]){GU.said[key]=1;const who=l[1]==='g'?P:l[1]==='m'?COUPLE[0]:COUPLE[1];if(who.root.visible)tmpBubble(who,l[2],3);}});}
-  if(Object.keys(GU.said).length>40)GU.said={};}
-function coupleUpdate(){if(CP.busy&&CP.until&&performance.now()>CP.until){CP.busy=false;CP.until=0;}
-  const down=mode==='walk'&&(player.y||0)<-1.2&&player.x>3.7;for(const q of COUPLE)q.root.visible=down&&!CP.busy&&!GU.away;}
-const PRAISE=[
-  {t:'🏅 প্রশংসাপত্র: সিঁড়ির সংস্কৃতি রক্ষায়',b:'প্রিয় {name},\n\nআমরা জানতে পেরেছি, আপনি সিঁড়িতে "বিশেষ আলাপ" চালানো জুটিকে সময়মতো শিক্ষা দিয়েছেন। কোম্পানির সংস্কৃতি রক্ষায় আপনার এই অবদান আমরা সোনার অক্ষরে (অথবা অন্তত হলুদ মার্কারে) লিখে রাখলাম।\n\nআপনার এমপ্লয়মেন্ট রেটিং বাড়ানো হলো। তবে মনে রাখবেন, প্রেম বন্ধ করা আমাদের উদ্দেশ্য নয়, প্রেম অফিস টাইমের বাইরে করাই উদ্দেশ্য।',s:'কৃতজ্ঞতায়, এইচআর আপা 😊'},
-  {t:'ধন্যবাদ পত্র: সিঁড়ির পাহারাদার',b:'{name},\n\nআজ থেকে আপনি আমাদের "অনানুষ্ঠানিক সিঁড়ি-পরিদর্শক"। সিঁড়ি হলো ওঠানামার জায়গা, প্রেম-ওঠানামার জায়গা নয়। আপনার তৎপরতায় আমরা মুগ্ধ, তাই রেটিংয়ে বোনাস দেওয়া হলো।\n\nপুনশ্চ: এই চিঠি কাউকে দেখাবেন না, বিশেষ করে ওই দুজনকে।',s:'ইতি, এইচআর বিভাগ (গোপনে খুশি)'},
-  {t:'সুনাম-পত্র: আপনি আমাদের গর্ব',b:'প্রিয় {name},\n\nএইচআর আপা আজ সারাদিন হাসিমুখে ছিলেন, আর তার কারণ আপনি। আপনার এই কাজে অফিসের শৃঙ্খলা ফিরেছে, সিঁড়ির পরিবেশ বদলেছে। রেটিং বাড়ল, চা-নাশতাও আমাদের পক্ষ থেকে।\n\n(চা-এর কথাটা মজা করে বললাম, কাপ আপনাকেই আনতে হবে।)',s:'শুভেচ্ছান্তে, এইচআর আপা 🌸'}];
-function showPraise(before,after,delta){const L=PRAISE[Math.floor(Math.random()*PRAISE.length)];
-  byId('lTitle').textContent=L.t;byId('lBody').textContent=L.b.replace(/\{name\}/g,window.CB_PLAYER.name);byId('lSign').textContent=L.s;
-  const cut=byId('lCut');cut.className='lcut good';cut.textContent='এমপ্লয়মেন্ট রেটিং '+bnd(before)+' → '+bnd(after)+(delta>0?' (+'+bnd(delta)+')':' (আগেই সর্বোচ্চ!)');
-  byId('lOk').disabled=false;byId('lOk').textContent='ধন্যবাদ ম্যাডাম 😎';byId('lNo').hidden=true;byId('mletter').hidden=false;sfx.play('ok');}
 async function npcShowCause(lk){NET.npcPending=false;const d=await api('/api/slap',{action:'npc',kind:lk==='npcDesk'?'desk':lk==='npcKick'?'kick':'slap'});
   if(d&&d.ok){if(PROFILE)PROFILE.employment=d.employment;showLetter(lk,'',d.before,d.employment,d.delta);}else if(d&&d.error)toast(d.error,3000);}
 
@@ -1438,7 +1332,7 @@ const PKIND=new Map([[aSmoke,'smoke'],[aSitSmoke,'smoke'],[aChatSit,'tea'],[aTea
 const POOL_HOME=[[.8,5,Math.PI/2],[4.75,6.9,-2.2]];
 // every spot in the office where somebody can be found doing something: the people who used to stand there for ever are gone, the spots stay
 function npcInit(){const pl=[];
-  for(let i=acts.length-1;i>=0;i--){const a=acts[i],P=a.P;if(P.staff||P.couple||P.dyn||a.fn===aWalker||a.fn===aCouple||a.fn===aStir)continue;const kind=PKIND.get(a.fn);if(!kind)continue;
+  for(let i=acts.length-1;i>=0;i--){const a=acts[i],P=a.P;if(P.staff||P.dyn||a.fn===aWalker||a.fn===aStir)continue;const kind=PKIND.get(a.fn);if(!kind)continue;
     pl.push({kind,fn:a.fn,f:{v:P.v,kbd:P.kbd,kbY:P.kbY,seat:P.seat,ground:P.ground,lookY:P.lookY},cup:P.hasCup||null,phone:P.phone?(P.phoneHand||'rHand'):null,cig:!!P.cigGroup,x:P.x,z:P.z,yaw:P.yaw});
     acts.splice(i,1);if(BAL.some(b=>b.P===P))P.root.visible=false;else scene.remove(P.root);}
   pl.reverse();
@@ -2117,10 +2011,10 @@ function diningNear(){if(MT||lastZone!=='dine'||!player)return-1;let b=-1,bd=1.7
 /* ================= activities: smoke anywhere, sleep, sing, watch a movie, make tea or coffee, and a few more ================= */
 // Some of them are against the rules: HR cuts the employment rating and sends an apology letter (the server decides how much).
 const ACT={kind:null,t:0,pen:false,cup:null,snd:0,say:0,sm:0,st:0,cool:{}};
-const SMOKE_OK=z=>z==='bal'||z==='stairs';
+const SMOKE_OK=z=>z==='bal';
 const KITCHEN=[16.55,-9.3],ACT_STAND=['sing','dance','stretch','make'];
 const ACTS=[
-  {k:'smoke',em:'🚬',bn:'সিগারেট ধরান',note:'বারান্দা বা সিঁড়ি ছাড়া অন্য জায়গায় ধরলে রেটিং কমবে'},
+  {k:'smoke',em:'🚬',bn:'সিগারেট ধরান',note:'শুধু বারান্দা ছাড়া অন্য জায়গায় ধরলে রেটিং কমবে'},
   {k:'invite',em:'🤝',bn:'কাউকে সিগারেটে ডাকুন',note:'অফিসে যারা অনলাইন আছে তাদের যে কাউকে'},
   {k:'sleep',em:'😴',bn:'ঘুমান',note:'ধরা পড়লে রেটিং কমবে'},
   {k:'sing',em:'🎤',bn:'গান গান',note:'অফিসে গান? রেটিং কমবে'},
@@ -2196,7 +2090,7 @@ async function penalize(kind){const now=performance.now();if((ACT.cool[kind]||0)
   const d=await api('/api/slap',{action:'act',kind});
   if(d&&d.ok){if(PROFILE)PROFILE.employment=d.employment;showLetter(kind,'',d.before,d.employment,d.delta);}else if(d&&d.error)toast(d.error,3000);}
 function actTick(P,dt,m){
-  // smoking is fine on the balcony and the stairs, and nowhere else (alone or with a friend)
+  // smoking is fine on the balcony, and nowhere else (alone or with a friend)
   const smk=SMOKE.on||(PAIR.on&&PAIR.ready);
   if(smk&&!SMOKE_OK(lastZone)){ACT.sm+=dt;if(ACT.sm>4){ACT.sm=-1e9;penalize('smoke');}}else if(!smk)ACT.sm=0;
   // a cup of tea in your hand steams, and once you sit down at a desk you drink it
@@ -2236,8 +2130,8 @@ function wireActs(){const el=byId('mact');byId('actbtn').addEventListener('click
   el.addEventListener('click',e=>{if(e.target===el)el.hidden=true;});for(const t of['keydown','keyup'])el.addEventListener(t,e=>e.stopPropagation());
   addEventListener('keydown',e=>{if(e.key==='Escape'&&!el.hidden){e.stopPropagation();el.hidden=true;}},true);}
 Object.assign(LET,{
-  smoke:[{t:'শো-কজ: ধোঁয়ার হিসাব দিন',b:'প্রতি: {name}\n\nআপনাকে অনুমোদিত জায়গার (বারান্দা বা সিঁড়ি) বাইরে সিগারেট ধরাতে দেখা গেছে। স্মোক-ডিটেক্টর আপনার ওপর ভীষণ অভিমান করেছে, আর এইচআর আপার চশমাও ধোঁয়ায় ঝাপসা।\n\nতিন কর্মদিবসের মধ্যে লিখিতভাবে জানান, "আমি আর বারান্দা-সিঁড়ি ছাড়া অন্য কোথাও ধোঁয়া ছাড়ব না।"',s:'ইতি, এইচআর বিভাগ (নাকে রুমাল দিয়ে)'},
-         {t:'সতর্কবার্তা: ধূমপান বিষয়ক',b:'প্রিয় {name},\n\nঅফিসের ভেতরে আপনার সিগারেটের ধোঁয়া দেখে ফায়ার অ্যালার্ম নাকি একটু হাঁচি দিয়েছে। ধূমপানের জন্য বারান্দা আর সিঁড়ি আছে, অফিসটা তাদের মতো খোলামেলা না।\n\nক্ষমা না চাইলে পরের বার সিগারেটের বদলে আপনার রেটিং ধোঁয়ায় উড়ে যাবে।',s:'শুভকামনায়, এইচআর আপা 🚭'}],
+  smoke:[{t:'শো-কজ: ধোঁয়ার হিসাব দিন',b:'প্রতি: {name}\n\nআপনাকে অনুমোদিত জায়গার (বারান্দা) বাইরে সিগারেট ধরাতে দেখা গেছে। স্মোক-ডিটেক্টর আপনার ওপর ভীষণ অভিমান করেছে, আর এইচআর আপার চশমাও ধোঁয়ায় ঝাপসা।\n\nতিন কর্মদিবসের মধ্যে লিখিতভাবে জানান, "আমি আর বারান্দা ছাড়া অন্য কোথাও ধোঁয়া ছাড়ব না।"',s:'ইতি, এইচআর বিভাগ (নাকে রুমাল দিয়ে)'},
+         {t:'সতর্কবার্তা: ধূমপান বিষয়ক',b:'প্রিয় {name},\n\nঅফিসের ভেতরে আপনার সিগারেটের ধোঁয়া দেখে ফায়ার অ্যালার্ম নাকি একটু হাঁচি দিয়েছে। ধূমপানের জন্য বারান্দা আছে, অফিসটা তাদের মতো খোলামেলা না।\n\nক্ষমা না চাইলে পরের বার সিগারেটের বদলে আপনার রেটিং ধোঁয়ায় উড়ে যাবে।',s:'শুভকামনায়, এইচআর আপা 🚭'}],
   sleep:[{t:'কারণ দর্শাও: কর্মঘণ্টায় নিদ্রা',b:'প্রতি: {name}\n\nআপনাকে অফিস চলাকালীন গভীর নিদ্রায় পাওয়া গেছে। আপনার নাক-ডাকার শব্দে পাশের সহকর্মীর কিবোর্ড তাল হারিয়ে ফেলেছে। ঘুম অফিসের বাইরের বিষয়, অফিসে আমরা শুধু স্বপ্নে প্রজেক্ট ডেলিভারি করি।\n\nকেন আপনাকে জাগানো উচিত নয়, তা জানান।',s:'ইতি, এইচআর বিভাগ ☕ (জেগে আছি)'},
          {t:'সতর্কবার্তা: নাক-ডাকা কাণ্ড',b:'প্রিয় {name},\n\nআপনার ঘুমের ছবি ইতিমধ্যে অফিসের গ্রুপে ঘুরছে। আমরা এটাকে "অনানুষ্ঠানিক রেস্ট ব্রেক" ধরতে পারছি না, কারণ ব্রেক সাধারণত ১৫ মিনিটের হয়, ঘণ্টার না।\n\nপরের বার ঘুম পেলে চা বানিয়ে খান, কফিতে ঘুম কাটে।',s:'শুভকামনায়, এইচআর আপা 😴'}],
   sing:[{t:'শো-কজ: সুরের অত্যাচার',b:'প্রতি: {name}\n\nঅফিসে আপনি এমন গলা ছেড়ে গান গেয়েছেন যে ওয়াটার ডিসপেনসারের পানি কেঁপে উঠেছে। আপনার গানের ভক্ত থাকতে পারে, কিন্তু অফিসে তাদের কেউ হেডফোন আনেননি।\n\nঅফিসের নীরবতা-নীতি ভঙ্গের কারণ ব্যাখ্যা করুন।',s:'ইতি, এইচআর বিভাগ (কানে তুলো দিয়ে)'},
@@ -3214,7 +3108,7 @@ function start(){
     for(const v of traffic){const px0=v.g.position.x,nx=((v.x0+v.dir*v.speed*tt+58)%116+116)%116-58;v.g.position.x=nx;if(onBal&&(px0-player.x)*(nx-player.x)<0&&Math.abs(nx-px0)<5)sfx.vehicle(Math.max(.3,Math.min(1,1.3-Math.abs(v.g.position.z-player.z)/22)),v.kind);}
     updSmoke(dt);gateUpdate(tt,dt);
     if(MT&&(MT.state==='play'||MT.state==='result')){}else if(mode==='walk')updateWalk(tt,dt);else{updFly(dt);controls.update();}
-    clockTick(dt);matchUpdate(dt);retUpdate(dt);remoteUpdate(dt,tt);bossUpdate(tt,dt);cmpUpdate(dt);hitUpdate(dt);gawk();tbUpdate(dt);pairNpc(tt,dt);coupleUpdate();guardUpdate(dt,tt);cctvUpdate(tt);
+    clockTick(dt);matchUpdate(dt);retUpdate(dt);remoteUpdate(dt,tt);bossUpdate(tt,dt);cmpUpdate(dt);hitUpdate(dt);gawk();tbUpdate(dt);pairNpc(tt,dt);cctvUpdate(tt);
     updateLabels();updateTalk(dt);renderer.render(scene,camera);requestAnimationFrame(frame);}
   updBoard();requestAnimationFrame(frame);
 }

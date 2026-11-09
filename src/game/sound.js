@@ -184,7 +184,6 @@ const SOUNDS = {
     noise(0.3, { freq: 600, q: 0.8, type: 'bandpass', vol: 0.06, at: 0.08, to: 250 });
   },
   whoosh: () => { noise(0.17, { freq: 300, to: 2400, q: 1.4, type: 'bandpass', vol: 0.2 }); noise(0.14, { freq: 1200, to: 500, q: 0.9, type: 'bandpass', vol: 0.08, at: 0.1 }); },
-  whistle: () => { for (let i = 0; i < 3; i++) tone(2300 + i * 150, .16, { type: 'sine', vol: .32, at: i * .2, to: 2900 }); },
   sing: () => { [[330, 0], [392, .5], [440, 1], [392, 1.5], [523, 2], [440, 2.6], [392, 3.1], [330, 3.6]].forEach(([f, at], i) => voice(f, i % 2 ? 800 : 520, i % 2 ? 1200 : 900, i === 4 ? .7 : .42, { vol: .38, at, to0: f * .985, vib: 6, breath: .12 })); },
   snore: () => { voice(75, 320, 620, .9, { vol: .5, to0: 58, breath: .8, vib: 3 }); noise(.8, { freq: 260, q: 1, vol: .22, at: .05 }); voice(60, 300, 560, .7, { vol: .4, at: 1.1, to0: 90, breath: .6 }); },
   sip: () => { noise(.3, { freq: 1500, q: 2, type: 'bandpass', vol: .18, to: 700 }); tone(180, .12, { type: 'sine', vol: .15, at: .28, to: 120 }); },
